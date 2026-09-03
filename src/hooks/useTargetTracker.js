@@ -1,54 +1,37 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CONFIG } from '../config'
 import {
   MONTHS, FULL, NOW, GOALS, WEEKLY, STAGES, DUE_ISO, PALETTE,
-  MONTH_NAMES, DOW, STORAGE,
+  MONTH_NAMES, DOW,
 } from '../lib/constants'
 import { iso, fmt, pretty, todayLabel } from '../lib/helpers'
+import { getState, putSlice } from '../lib/api'
 
-/* ----------------------------- persistence ----------------------------- */
-function load(key, fallback) {
-  try {
-    const v = localStorage.getItem(key)
-    return v ? JSON.parse(v) : fallback
-  } catch (e) {
-    return fallback
-  }
-}
-function loadString(key) {
-  try {
-    return localStorage.getItem(key) || ''
-  } catch (e) {
-    return ''
-  }
-}
-function save(key, value) {
-  try {
-    localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value))
-  } catch (e) {
-    /* storage unavailable — ignore */
-  }
-}
-
+/* ----------------------------------------------------------------------
+   Persistence lives in MongoDB, reached through the /api/state endpoints
+   (see src/lib/api.js and the /api folder). State starts from in-memory
+   defaults, is hydrated from the API on mount, and each persisted slice is
+   synced back to the API whenever it changes.
+   ---------------------------------------------------------------------- */
 const initialState = () => ({
-  done: load(STORAGE.done, {}),
+  done: {},
   sel: NOW,
   page: 'dash',
-  custom: load(STORAGE.custom, []),
-  notes: loadString(STORAGE.notes),
-  edits: load(STORAGE.edits, {}),
-  hidden: load(STORAGE.hidden, {}),
-  todos: load(STORAGE.todos, []),
-  archive: load(STORAGE.archive, []),
+  custom: [],
+  notes: '',
+  edits: {},
+  hidden: {},
+  todos: [],
+  archive: [],
   printing: false,
   repMonth: NOW,
   filter: 'all',
-  meetings: load(STORAGE.meetings, []),
+  meetings: [],
   calY: 2026,
   calM: 8,
   calSel: '2026-09-02',
-  xgoals: load(STORAGE.goals, []),
-  gedits: load(STORAGE.goalEdits, {}),
+  xgoals: [],
+  gedits: {},
   gdraft: { name: '', target: '', due: '2027-03-31', color: '#5FA8FF' },
   draft: { goal: 'edudot', month: NOW, week: 'ms', text: '' },
   tdraft: { title: '', who: '', from: iso(new Date()), due: '', details: '' },
@@ -76,17 +59,46 @@ export function useTargetTracker() {
     setState((prev) => ({ ...prev, ...(typeof patch === 'function' ? patch(prev) : patch) }))
   }, [])
 
-  /* ---- persistence: sync each slice to localStorage on change ---- */
-  useEffect(() => save(STORAGE.done, state.done), [state.done])
-  useEffect(() => save(STORAGE.custom, state.custom), [state.custom])
-  useEffect(() => save(STORAGE.notes, state.notes), [state.notes])
-  useEffect(() => save(STORAGE.edits, state.edits), [state.edits])
-  useEffect(() => save(STORAGE.hidden, state.hidden), [state.hidden])
-  useEffect(() => save(STORAGE.todos, state.todos), [state.todos])
-  useEffect(() => save(STORAGE.archive, state.archive), [state.archive])
-  useEffect(() => save(STORAGE.meetings, state.meetings), [state.meetings])
-  useEffect(() => save(STORAGE.goals, state.xgoals), [state.xgoals])
-  useEffect(() => save(STORAGE.goalEdits, state.gedits), [state.gedits])
+  /* ---- hydrate from MongoDB once on mount ---- */
+  const hydrated = useRef(false)
+  useEffect(() => {
+    let alive = true
+    getState().then((data) => {
+      if (alive && data) {
+        update({
+          done: data.done ?? {},
+          custom: data.custom ?? [],
+          notes: data.notes ?? '',
+          edits: data.edits ?? {},
+          hidden: data.hidden ?? {},
+          todos: data.todos ?? [],
+          archive: data.archive ?? [],
+          meetings: data.meetings ?? [],
+          xgoals: data.goals ?? [],
+          gedits: data.goalEdits ?? {},
+        })
+      }
+      hydrated.current = true
+    })
+    return () => { alive = false }
+  }, [update])
+
+  /* ---- persistence: sync each slice to MongoDB on change (after hydration).
+     putSlice is debounced and skips unchanged values, so the hydration
+     re-render does not echo the freshly loaded data back to the server. ---- */
+  const persist = useCallback((key, value) => {
+    if (hydrated.current) putSlice(key, value)
+  }, [])
+  useEffect(() => persist('done', state.done), [state.done, persist])
+  useEffect(() => persist('custom', state.custom), [state.custom, persist])
+  useEffect(() => persist('notes', state.notes), [state.notes, persist])
+  useEffect(() => persist('edits', state.edits), [state.edits, persist])
+  useEffect(() => persist('hidden', state.hidden), [state.hidden, persist])
+  useEffect(() => persist('todos', state.todos), [state.todos, persist])
+  useEffect(() => persist('archive', state.archive), [state.archive, persist])
+  useEffect(() => persist('meetings', state.meetings), [state.meetings, persist])
+  useEffect(() => persist('goals', state.xgoals), [state.xgoals, persist])
+  useEffect(() => persist('goalEdits', state.gedits), [state.gedits, persist])
 
   /* ---- print handling ---- */
   useEffect(() => {

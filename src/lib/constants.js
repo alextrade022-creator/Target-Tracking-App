@@ -114,16 +114,10 @@ export const MONTH_NAMES = [
 
 export const DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-// localStorage keys — kept identical so existing saved data keeps working.
-export const STORAGE = {
-  done: 'targets.roadmap.v1',
-  custom: 'targets.custom.v1',
-  notes: 'targets.notes.v1',
-  edits: 'targets.edits.v1',
-  hidden: 'targets.hidden.v1',
-  todos: 'targets.todos.v1',
-  archive: 'targets.archive.v1',
-  meetings: 'targets.meetings.v1',
-  goals: 'targets.goals.v1',
-  goalEdits: 'targets.goaledits.v1',
-}
+// Persisted state slice names. These match the keys used by the /api/state
+// endpoints and the `app_state` collection in MongoDB (see src/lib/api.js and
+// api/_lib/slices.js). Persistence itself lives server-side.
+export const SLICES = [
+  'done', 'custom', 'notes', 'edits', 'hidden',
+  'todos', 'archive', 'meetings', 'goals', 'goalEdits',
+]
