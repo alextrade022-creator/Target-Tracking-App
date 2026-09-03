@@ -5,12 +5,12 @@ export default function Report({ vals, actions }) {
     <div>
       {/* Controls (hidden while printing) */}
       {!vals.printing && (
-        <div className="mt-7 flex flex-wrap items-center gap-3.5 rounded-2xl border border-white/[0.08] bg-surface px-5 py-4">
+        <div className="mt-7 flex flex-wrap items-center gap-3.5 rounded-2xl border border-hair/[0.08] bg-surface px-5 py-4">
           <div className="mono text-[11px] tracking-[0.16em] text-mute2">REPORT MONTH</div>
           <MonthSelect className="min-w-[190px] flex-none" value={String(vals.repMonth)} onChange={(e) => actions.setRepMonth(Number(e.target.value))} />
           <div className="flex-1" />
           <div className="text-[12.5px] text-slate">Opens your browser's print dialog — choose "Save as PDF".</div>
-          <button type="button" onClick={actions.exportPdf} className="rounded-lg bg-teal px-6 py-[11px] text-[14px] font-bold text-ink">
+          <button type="button" onClick={actions.exportPdf} className="rounded-lg bg-teal px-6 py-[11px] text-[14px] font-bold text-onaccent">
             ⤓ Export PDF
           </button>
         </div>
@@ -19,7 +19,7 @@ export default function Report({ vals, actions }) {
       {/* Printable sheet */}
       <div
         id="report-sheet"
-        className="mx-auto mt-[26px] box-border w-[1000px] rounded-md bg-white px-14 py-[52px] text-[#16202B] shadow-[0_20px_60px_rgba(0,0,0,.4)] print:m-0 print:w-auto print:rounded-none print:p-0 print:shadow-none"
+        className="mx-auto mt-[26px] box-border w-full max-w-[1000px] rounded-md bg-white px-5 py-8 text-[#16202B] shadow-[0_20px_60px_rgba(0,0,0,.4)] sm:px-14 sm:py-[52px] print:m-0 print:w-auto print:max-w-none print:rounded-none print:p-0 print:shadow-none"
       >
         <div className="flex items-start justify-between border-b-2 border-[#16202B] pb-[18px]">
           <div>
@@ -34,7 +34,7 @@ export default function Report({ vals, actions }) {
         </div>
 
         {/* Stat boxes */}
-        <div className="mt-[26px] grid grid-cols-4 gap-3.5">
+        <div className="mt-[26px] grid grid-cols-2 gap-3.5 sm:grid-cols-4">
           <StatBox label="OVERALL PROGRESS" value={vals.pct + '%'} sub={`${vals.doneCount} of ${vals.totalCount} milestones`} />
           <StatBox label="THIS MONTH" value={vals.repMonthPct} sub={`${vals.repMonthRatio} milestones`} />
           <StatBox label="WEEKLY ACTIONS" value={vals.repWeekPct} sub={`${vals.repWeekRatio} completed`} />
@@ -43,7 +43,8 @@ export default function Report({ vals, actions }) {
 
         {/* Targets & goals */}
         <SectionTitle>Targets &amp; goals</SectionTitle>
-        <div className="grid" style={{ gridTemplateColumns: '1.4fr 1.6fr .9fr .6fr .8fr' }}>
+        <div className="overflow-x-auto">
+        <div className="grid min-w-[540px]" style={{ gridTemplateColumns: '1.4fr 1.6fr .9fr .6fr .8fr' }}>
           <Th>TARGET</Th><Th>GOAL</Th><Th>DEADLINE</Th><Th>DONE</Th><Th last>STATUS</Th>
           {vals.repGoals.map((r, i) => (
             <div key={i} className="contents">
@@ -57,9 +58,10 @@ export default function Report({ vals, actions }) {
             </div>
           ))}
         </div>
+        </div>
 
         {/* Completed / pending */}
-        <div className="mt-[34px] grid grid-cols-2 gap-[26px]">
+        <div className="mt-[34px] grid grid-cols-1 gap-[26px] sm:grid-cols-2">
           <div>
             <div className="border-b border-[#DCE2E8] pb-2 text-[19px] font-bold">Completed in {vals.repMonthShort}</div>
             <div className="mt-3 flex flex-col gap-[7px]">
@@ -82,7 +84,8 @@ export default function Report({ vals, actions }) {
 
         {/* Todo board */}
         <SectionTitle>Todo board</SectionTitle>
-        <div className="grid" style={{ gridTemplateColumns: '1fr 150px 120px 120px' }}>
+        <div className="overflow-x-auto">
+        <div className="grid min-w-[540px]" style={{ gridTemplateColumns: '1fr 150px 120px 120px' }}>
           <Th>TASK</Th><Th>ASSIGNED TO</Th><Th>DEADLINE</Th><Th last>STATUS</Th>
           {vals.repTodos.map((t, i) => (
             <div key={i} className="contents">
@@ -94,6 +97,7 @@ export default function Report({ vals, actions }) {
               </Td>
             </div>
           ))}
+        </div>
         </div>
         {vals.repTodosEmpty && <div className="mt-3 text-[13px] text-[#8892A0]">No todos on the board.</div>}
 

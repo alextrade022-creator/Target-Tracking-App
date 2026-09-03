@@ -6,10 +6,10 @@ export default function Notes({ vals, actions }) {
   const { draft, gdraft, customList, editRows, filters, msRows, wkRows } = vals
 
   return (
-    <div className="mt-7 grid grid-cols-2 items-start gap-[22px]">
+    <div className="mt-7 grid grid-cols-1 items-start gap-[22px] xl:grid-cols-2">
       {/* Add a new task */}
       <div className="panel">
-        <div className="border-b border-white/[0.08] px-[22px] py-[18px]">
+        <div className="border-b border-hair/[0.08] px-[22px] py-[18px]">
           <div className="text-[19px] font-semibold tracking-[-0.01em]">Add a new task</div>
           <div className="mt-1 text-[13px] text-mute">
             Pick the company and the month. Choose a week to make it a weekly action, or leave it as a monthly milestone —
@@ -32,7 +32,7 @@ export default function Notes({ vals, actions }) {
             <input className="field" value={draft.text} placeholder="e.g. Visit Kozhikode site with contractor" onChange={(e) => actions.setDraft({ text: e.target.value })} />
           </Field>
           <div className="flex items-center gap-3.5">
-            <button type="button" onClick={actions.addTask} className="rounded-lg bg-teal px-[26px] py-3 text-[14px] font-bold text-ink">
+            <button type="button" onClick={actions.addTask} className="rounded-lg bg-teal px-[26px] py-3 text-[14px] font-bold text-onaccent">
               + Add to dashboard
             </button>
             <div className="text-[12.5px] text-slate">{vals.addHint}</div>
@@ -42,13 +42,13 @@ export default function Notes({ vals, actions }) {
 
       {/* Tasks you added */}
       <div className="panel">
-        <div className="flex items-center justify-between border-b border-white/[0.08] px-[22px] py-[18px]">
+        <div className="flex items-center justify-between border-b border-hair/[0.08] px-[22px] py-[18px]">
           <div className="text-[19px] font-semibold tracking-[-0.01em]">Tasks you added</div>
           <div className="mono text-[11px] tracking-[0.14em] text-mute2">{vals.customCount}</div>
         </div>
         <div className="flex min-h-[120px] flex-col gap-2.5 px-[22px] pb-[22px] pt-3.5">
           {customList.map((c) => (
-            <div key={c.id} className="flex items-start gap-3 rounded-[10px] border border-white/[0.07] bg-white/[0.04] px-3.5 py-3">
+            <div key={c.id} className="flex items-start gap-3 rounded-[10px] border border-hair/[0.07] bg-hair/[0.04] px-3.5 py-3">
               <div className="mt-0.5">
                 <TickBox item={c} size={15} onClick={c.toggle} />
               </div>
@@ -57,8 +57,8 @@ export default function Notes({ vals, actions }) {
                   {c.text}
                 </div>
                 <div className="mt-[7px] flex flex-wrap gap-[7px]">
-                  <span className="mono rounded-md bg-white/[0.06] px-2 py-[3px] text-[10px] tracking-[0.1em]" style={{ color: c.color }}>{c.goalName}</span>
-                  <span className="mono rounded-md bg-white/[0.06] px-2 py-[3px] text-[10px] tracking-[0.1em] text-mute3">{c.where}</span>
+                  <span className="mono rounded-md bg-hair/[0.06] px-2 py-[3px] text-[10px] tracking-[0.1em]" style={{ color: c.color }}>{c.goalName}</span>
+                  <span className="mono rounded-md bg-hair/[0.06] px-2 py-[3px] text-[10px] tracking-[0.1em] text-mute3">{c.where}</span>
                 </div>
               </div>
               <div onClick={c.remove} className="cursor-pointer px-1 py-0.5 text-[16px] leading-none text-mute2">×</div>
@@ -72,13 +72,13 @@ export default function Notes({ vals, actions }) {
 
       {/* Add a new target */}
       <div className="panel col-span-full">
-        <div className="border-b border-white/[0.08] px-[22px] py-[18px]">
+        <div className="border-b border-hair/[0.08] px-[22px] py-[18px]">
           <div className="text-[19px] font-semibold tracking-[-0.01em]">Add a new target</div>
           <div className="mt-1 text-[13px] text-mute">
             A new business or goal — it gets its own card, its own row in the monthly roadmap, and appears in every task dropdown.
           </div>
         </div>
-        <div className="grid items-end gap-3.5 px-[22px] py-5" style={{ gridTemplateColumns: '1fr 1.5fr 160px auto auto' }}>
+        <div className="grid grid-cols-1 items-end gap-3.5 px-[22px] py-5 sm:grid-cols-2 lg:grid-cols-[1fr_1.5fr_160px_auto_auto]">
           <Field label="TARGET NAME">
             <input className="field" value={gdraft.name} placeholder="e.g. EduDot Online" onChange={(e) => actions.setG({ name: e.target.value })} />
           </Field>
@@ -86,7 +86,7 @@ export default function Notes({ vals, actions }) {
             <input className="field" value={gdraft.target} placeholder="e.g. 3 online cohorts launched" onChange={(e) => actions.setG({ target: e.target.value })} />
           </Field>
           <Field label="DEADLINE">
-            <input type="date" className="field [color-scheme:dark]" value={gdraft.due} onChange={(e) => actions.setG({ due: e.target.value })} />
+            <input type="date" className="field" value={gdraft.due} onChange={(e) => actions.setG({ due: e.target.value })} />
           </Field>
           <Field label="COLOUR">
             <div className="flex h-[38px] items-center gap-2">
@@ -97,37 +97,37 @@ export default function Notes({ vals, actions }) {
                     key={c}
                     onClick={() => actions.setG({ color: c })}
                     className="cursor-pointer rounded-full"
-                    style={{ background: c, width: on ? 26 : 20, height: on ? 26 : 20, border: on ? '2px solid #E8EDF3' : '1px solid rgba(255,255,255,.18)' }}
+                    style={{ background: c, width: on ? 26 : 20, height: on ? 26 : 20, border: on ? '2px solid var(--ring)' : '1px solid rgb(var(--hair-rgb) / .18)' }}
                   />
                 )
               })}
             </div>
           </Field>
-          <button type="button" onClick={actions.addGoal} className="whitespace-nowrap rounded-lg bg-teal px-6 py-3 text-[14px] font-bold text-ink">
+          <button type="button" onClick={actions.addGoal} className="whitespace-nowrap rounded-lg bg-teal px-6 py-3 text-[14px] font-bold text-onaccent">
             + Add target
           </button>
         </div>
 
-        <div className="mono border-t border-white/[0.08] px-[22px] pb-2 pt-[18px] text-[11px] tracking-[0.16em] text-mute2">
+        <div className="mono border-t border-hair/[0.08] px-[22px] pb-2 pt-[18px] text-[11px] tracking-[0.16em] text-mute2">
           EDIT EXISTING TARGETS
         </div>
-        <div className="flex flex-col gap-2.5 px-[22px] pb-[22px]">
+        <div className="flex flex-col gap-2.5 overflow-x-auto px-[22px] pb-[22px]">
           {editRows.map((g) => (
             <div
               key={g.k}
-              className="grid items-center gap-3 rounded-[10px] border border-white/[0.07] bg-white/[0.035] px-3.5 py-[11px]"
+              className="grid min-w-[720px] items-center gap-3 rounded-[10px] border border-hair/[0.07] bg-hair/[0.035] px-3.5 py-[11px]"
               style={{ gridTemplateColumns: '1fr 1.5fr 150px auto auto auto' }}
             >
-              <input className="field border-white/10 px-[11px] py-[9px] text-[13.5px] font-semibold" value={g.name} onChange={(e) => actions.editGoal(g.k, { name: e.target.value })} />
-              <input className="field border-white/10 px-[11px] py-[9px] text-[13px] text-mute3" value={g.targetText} onChange={(e) => actions.editGoal(g.k, { target: e.target.value })} />
-              <input type="date" className="field border-white/10 px-2.5 py-2 text-[13px] text-mute3 [color-scheme:dark]" value={g.dueIso} onChange={(e) => actions.editGoal(g.k, { due: e.target.value })} />
+              <input className="field border-hair/10 px-[11px] py-[9px] text-[13.5px] font-semibold" value={g.name} onChange={(e) => actions.editGoal(g.k, { name: e.target.value })} />
+              <input className="field border-hair/10 px-[11px] py-[9px] text-[13px] text-mute3" value={g.targetText} onChange={(e) => actions.editGoal(g.k, { target: e.target.value })} />
+              <input type="date" className="field border-hair/10 px-2.5 py-2 text-[13px] text-mute3" value={g.dueIso} onChange={(e) => actions.editGoal(g.k, { due: e.target.value })} />
               <div className="flex items-center gap-1.5">
                 {PALETTE.map((c) => (
                   <div
                     key={c}
                     onClick={() => actions.editGoal(g.k, { color: c })}
                     className="h-[17px] w-[17px] cursor-pointer rounded-full"
-                    style={{ background: c, border: g.color === c ? '2px solid #E8EDF3' : '1px solid rgba(255,255,255,.18)' }}
+                    style={{ background: c, border: g.color === c ? '2px solid var(--ring)' : '1px solid rgb(var(--hair-rgb) / .18)' }}
                   />
                 ))}
               </div>
@@ -152,7 +152,7 @@ export default function Notes({ vals, actions }) {
             onClick={f.select}
             className={cn(
               'rounded-lg border px-[15px] py-[7px] text-[12.5px] font-medium',
-              f.on ? 'border-teal bg-teal text-ink' : 'border-white/[0.14] bg-transparent text-mute',
+              f.on ? 'border-teal bg-teal text-onaccent' : 'border-hair/[0.14] bg-transparent text-mute',
             )}
           >
             {f.label}
@@ -160,7 +160,7 @@ export default function Notes({ vals, actions }) {
         ))}
         <div className="flex-1" />
         {vals.restoreShow && (
-          <button type="button" onClick={actions.restoreAll} className="mono rounded-lg border border-white/[0.14] px-3.5 py-[7px] text-[10.5px] tracking-[0.12em] text-mute">
+          <button type="button" onClick={actions.restoreAll} className="mono rounded-lg border border-hair/[0.14] px-3.5 py-[7px] text-[10.5px] tracking-[0.12em] text-mute">
             {vals.restoreLabel}
           </button>
         )}
@@ -173,7 +173,7 @@ export default function Notes({ vals, actions }) {
 
       {/* Notes */}
       <div className="panel col-span-full">
-        <div className="flex items-center justify-between border-b border-white/[0.08] px-[22px] py-[18px]">
+        <div className="flex items-center justify-between border-b border-hair/[0.08] px-[22px] py-[18px]">
           <div className="text-[19px] font-semibold tracking-[-0.01em]">Notes</div>
           <div className="mono text-[11px] tracking-[0.14em] text-mute2">SAVED AUTOMATICALLY</div>
         </div>
@@ -202,16 +202,16 @@ function Field({ label, children }) {
 function ItemList({ title, count, rows, actions }) {
   return (
     <div className="panel">
-      <div className="flex items-center justify-between border-b border-white/[0.08] px-[22px] py-[18px]">
+      <div className="flex items-center justify-between border-b border-hair/[0.08] px-[22px] py-[18px]">
         <div className="text-[19px] font-semibold tracking-[-0.01em]">{title}</div>
         <div className="mono text-[11px] tracking-[0.14em] text-mute2">{count}</div>
       </div>
       <div className="flex max-h-[620px] flex-col gap-2.5 overflow-auto px-[22px] pb-[22px] pt-3.5">
         {rows.map((x) => (
-          <div key={x.id} className="flex items-center gap-[11px] rounded-[10px] border border-white/[0.07] bg-white/[0.035] px-3 py-2.5">
+          <div key={x.id} className="flex items-center gap-[11px] rounded-[10px] border border-hair/[0.07] bg-hair/[0.035] px-3 py-2.5">
             <TickBox item={x} size={15} onClick={x.toggle} />
-            <div className="mono whitespace-nowrap rounded-md bg-white/[0.06] px-[7px] py-1 text-[9.5px] tracking-[0.09em] text-mute3">{x.month}</div>
-            <div className="mono whitespace-nowrap rounded-md bg-white/[0.06] px-[7px] py-1 text-[9.5px] tracking-[0.09em]" style={{ color: x.color }}>{x.tag}</div>
+            <div className="mono whitespace-nowrap rounded-md bg-hair/[0.06] px-[7px] py-1 text-[9.5px] tracking-[0.09em] text-mute3">{x.month}</div>
+            <div className="mono whitespace-nowrap rounded-md bg-hair/[0.06] px-[7px] py-1 text-[9.5px] tracking-[0.09em]" style={{ color: x.color }}>{x.tag}</div>
             <input
               className={cn('min-w-0 flex-1 border-none bg-transparent py-0.5 text-[13px] outline-none', x.strike && 'line-through')}
               style={{ color: x.textColor }}

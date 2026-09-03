@@ -11,6 +11,17 @@
       rel="stylesheet"
     />
     <title>Targets Roadmap</title>
+    <script>
+      // Apply the saved theme before first paint to avoid a flash of the wrong theme.
+      (function () {
+        try {
+          var t = localStorage.getItem('targets.theme.v1')
+          document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : 'dark')
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'dark')
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

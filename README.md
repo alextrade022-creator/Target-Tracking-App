@@ -4,11 +4,16 @@ A goal & target tracker — dashboard, todo board, calendar, notes/new-tasks, an
 
 Refactored from the original single-file Claude Design document into **React + Vite + Tailwind CSS**.
 
+## Features
+
+- **Light & dark themes** with a toggle in the top-right of the header. The choice is saved to `localStorage` and applied before first paint (no flash). The theme is driven by CSS variables, so every surface, text and hairline flips consistently; accent colors stay constant.
+- **Responsive** from phone to wide desktop. Wide tables (the monthly roadmap, the calendar grid, the target editor, the report tables) scroll horizontally on small screens; multi-column sections collapse to fewer columns.
+
 ## Tech stack
 
 - **React 18** (function components + hooks)
 - **Vite 5** (dev server + build)
-- **Tailwind CSS 3** (all styling; runtime-dynamic colors/widths remain inline styles because Tailwind can't express arbitrary runtime values)
+- **Tailwind CSS 3** (all styling; theme neutrals resolve from CSS variables, so light/dark flips without `dark:` variants everywhere. Runtime-dynamic colors/widths remain inline styles because Tailwind can't express arbitrary runtime values.)
 
 ## Local development
 

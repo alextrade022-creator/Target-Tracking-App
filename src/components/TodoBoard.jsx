@@ -8,13 +8,13 @@ export default function TodoBoard({ vals, actions }) {
     <div>
       {/* New todo */}
       <div className="panel mt-7">
-        <div className="border-b border-white/[0.08] px-[22px] py-[18px]">
+        <div className="border-b border-hair/[0.08] px-[22px] py-[18px]">
           <div className="text-[19px] font-semibold tracking-[-0.01em]">New todo</div>
           <div className="mt-1 text-[13px] text-mute">
             Anything ad-hoc that isn't part of the roadmap — assign it, date it, and move it across the board.
           </div>
         </div>
-        <div className="grid items-end gap-3.5 px-[22px] py-5" style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr auto' }}>
+        <div className="grid grid-cols-1 items-end gap-3.5 px-[22px] py-5 sm:grid-cols-2 md:grid-cols-[2fr_1fr_1fr_1fr_auto]">
           <Labeled label="TASK NAME">
             <input className="field" value={tdraft.title} placeholder="July month hiring teachers — detailed report" onChange={(e) => setT({ title: e.target.value })} />
           </Labeled>
@@ -22,12 +22,12 @@ export default function TodoBoard({ vals, actions }) {
             <input className="field" value={tdraft.who} placeholder="Name" onChange={(e) => setT({ who: e.target.value })} />
           </Labeled>
           <Labeled label="ASSIGNED ON">
-            <input type="date" className="field [color-scheme:dark]" value={tdraft.from} onChange={(e) => setT({ from: e.target.value })} />
+            <input type="date" className="field" value={tdraft.from} onChange={(e) => setT({ from: e.target.value })} />
           </Labeled>
           <Labeled label="DEADLINE">
-            <input type="date" className="field [color-scheme:dark]" value={tdraft.due} onChange={(e) => setT({ due: e.target.value })} />
+            <input type="date" className="field" value={tdraft.due} onChange={(e) => setT({ due: e.target.value })} />
           </Labeled>
-          <button type="button" onClick={actions.addTodo} className="whitespace-nowrap rounded-lg bg-teal px-6 py-3 text-[14px] font-bold text-ink">
+          <button type="button" onClick={actions.addTodo} className="whitespace-nowrap rounded-lg bg-teal px-6 py-3 text-[14px] font-bold text-onaccent">
             + Add todo
           </button>
           <div className="col-span-full">
@@ -44,9 +44,9 @@ export default function TodoBoard({ vals, actions }) {
       </div>
 
       {/* Board */}
-      <div className="mt-[22px] grid grid-cols-3 items-start gap-4">
+      <div className="mt-[22px] grid grid-cols-1 items-start gap-4 md:grid-cols-3">
         {columns.map((col) => (
-          <div key={col.label} className="min-h-[260px] rounded-2xl border border-white/[0.08] bg-surface p-4">
+          <div key={col.label} className="min-h-[260px] rounded-2xl border border-hair/[0.08] bg-surface p-4">
             <div className="mb-3.5 flex items-center gap-2.5">
               <div className="mono rounded-md px-[11px] py-[5px] text-[11px] tracking-[0.14em]" style={{ color: col.color, background: col.tint }}>
                 {col.label}
@@ -55,7 +55,7 @@ export default function TodoBoard({ vals, actions }) {
             </div>
             <div className="flex flex-col gap-2.5">
               {col.cards.map((c) => (
-                <div key={c.id} className="rounded-xl border border-white/[0.08] bg-card p-3.5" style={{ borderLeft: '3px solid ' + c.accent }}>
+                <div key={c.id} className="rounded-xl border border-hair/[0.08] bg-card p-3.5" style={{ borderLeft: '3px solid ' + c.accent }}>
                   <div className="flex items-start justify-between gap-2.5">
                     <div
                       className={cn('text-[14.5px] font-semibold leading-[1.35]', c.strike && 'line-through')}
@@ -69,15 +69,15 @@ export default function TodoBoard({ vals, actions }) {
                     <div className="mt-[7px] text-[12.5px] leading-[1.5] text-mute" style={{ textWrap: 'pretty' }}>{c.details}</div>
                   )}
                   <div className="mt-[11px] flex flex-wrap gap-[7px]">
-                    {c.hasWho && <Chip className="bg-white/[0.07] text-soft">👤 {c.who}</Chip>}
-                    {c.hasFrom && <Chip className="bg-white/[0.05] text-mute">FROM {c.from}</Chip>}
+                    {c.hasWho && <Chip className="bg-hair/[0.07] text-soft">👤 {c.who}</Chip>}
+                    {c.hasFrom && <Chip className="bg-hair/[0.05] text-mute">FROM {c.from}</Chip>}
                     {c.hasDue && (
                       <Chip style={{ color: c.dueColor, background: c.dueBg }}>DUE {c.due}</Chip>
                     )}
                   </div>
                   <div className="mt-3 flex gap-2">
                     {c.showBack && (
-                      <button type="button" onClick={c.back} className="flex-1 rounded-md border border-white/[0.12] py-[7px] text-center text-[11.5px] text-mute">
+                      <button type="button" onClick={c.back} className="flex-1 rounded-md border border-hair/[0.12] py-[7px] text-center text-[11.5px] text-mute">
                         ← {c.backLabel}
                       </button>
                     )}
@@ -87,7 +87,7 @@ export default function TodoBoard({ vals, actions }) {
                       </button>
                     )}
                     {c.showArchive && (
-                      <button type="button" onClick={c.archive} className="flex-1 rounded-md border border-white/[0.12] py-[7px] text-center text-[11.5px] text-mute">
+                      <button type="button" onClick={c.archive} className="flex-1 rounded-md border border-hair/[0.12] py-[7px] text-center text-[11.5px] text-mute">
                         Archive
                       </button>
                     )}
@@ -102,15 +102,15 @@ export default function TodoBoard({ vals, actions }) {
 
       {/* History */}
       <div className="panel mt-[22px]">
-        <div className="flex items-center justify-between border-b border-white/[0.08] px-[22px] py-[18px]">
+        <div className="flex items-center justify-between border-b border-hair/[0.08] px-[22px] py-[18px]">
           <div className="text-[19px] font-semibold tracking-[-0.01em]">History — completed &amp; archived</div>
           <div className="mono text-[11px] tracking-[0.14em] text-mute2">{vals.historyCount}</div>
         </div>
-        <div className="flex flex-col gap-2 px-[22px] pb-[22px] pt-3.5">
+        <div className="flex flex-col gap-2 overflow-x-auto px-[22px] pb-[22px] pt-3.5">
           {history.map((h) => (
             <div
               key={h.id}
-              className="grid items-center gap-3.5 rounded-[10px] border border-white/[0.07] bg-white/[0.035] px-3.5 py-[11px]"
+              className="grid min-w-[680px] items-center gap-3.5 rounded-[10px] border border-hair/[0.07] bg-hair/[0.035] px-3.5 py-[11px]"
               style={{ gridTemplateColumns: '1fr 160px 130px 130px auto' }}
             >
               <div className="text-[13.5px] text-mute3" style={{ textWrap: 'pretty' }}>{h.title}</div>
@@ -118,7 +118,7 @@ export default function TodoBoard({ vals, actions }) {
               <div className="mono text-[11px] text-mute2">DUE {h.due}</div>
               <div className="mono text-[11px] text-green">DONE {h.at}</div>
               <div className="flex gap-2">
-                <button type="button" onClick={h.restore} className="rounded-md border border-white/[0.12] px-3 py-[5px] text-[11px] text-mute">Restore</button>
+                <button type="button" onClick={h.restore} className="rounded-md border border-hair/[0.12] px-3 py-[5px] text-[11px] text-mute">Restore</button>
                 <div onClick={h.remove} className="cursor-pointer px-0.5 text-[16px] leading-none text-mute2">×</div>
               </div>
             </div>

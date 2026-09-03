@@ -1,4 +1,5 @@
 import { useTargetTracker } from './hooks/useTargetTracker'
+import { useTheme } from './hooks/useTheme'
 import Header from './components/Header'
 import Dashboard from './components/Dashboard'
 import TodoBoard from './components/TodoBoard'
@@ -8,13 +9,14 @@ import Report from './components/Report'
 
 export default function App() {
   const { vals, actions } = useTargetTracker()
+  const { theme, toggle } = useTheme()
 
   return (
     <div
       id="app-root"
-      className="mx-auto box-border w-[1600px] max-w-full px-11 pb-16 pt-11 text-fg print:w-auto print:p-0"
+      className="mx-auto box-border w-full max-w-[1600px] px-4 pb-16 pt-6 text-fg sm:px-6 lg:px-11 lg:pt-11 print:p-0"
     >
-      {!vals.printing && <Header vals={vals} goPage={actions.goPage} />}
+      {!vals.printing && <Header vals={vals} goPage={actions.goPage} theme={theme} toggleTheme={toggle} />}
 
       {vals.page === 'dash' && <Dashboard vals={vals} actions={actions} />}
       {vals.page === 'todo' && <TodoBoard vals={vals} actions={actions} />}

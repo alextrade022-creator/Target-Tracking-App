@@ -268,10 +268,10 @@ function computeVals(st, a) {
   const scale = target / 160
 
   const box = (isDone, color) => ({
-    boxBorder: isDone ? color : '#4A5A6B',
+    boxBorder: isDone ? color : 'var(--box-border)',
     boxBg: isDone ? color : 'transparent',
     tick: isDone ? '✓' : '',
-    textColor: isDone ? '#66798C' : '#D8E1EA',
+    textColor: isDone ? 'var(--tick-done)' : 'var(--soft)',
     strike: isDone,
   })
 
@@ -315,8 +315,8 @@ function computeVals(st, a) {
         if (isDone) { gd++; monthDone[mi]++ }
         return {
           id: o.id, t: o.t, toggle: () => a.toggle(o.id),
-          chipBg: o.custom ? 'rgba(78,205,196,.10)' : isDone ? 'rgba(255,255,255,.03)' : 'rgba(255,255,255,.055)',
-          chipBorder: o.custom ? 'rgba(78,205,196,.35)' : isDone ? 'rgba(255,255,255,.05)' : 'rgba(255,255,255,.09)',
+          chipBg: o.custom ? 'rgba(78,205,196,.10)' : isDone ? 'rgb(var(--hair-rgb) / .03)' : 'rgb(var(--hair-rgb) / .055)',
+          chipBorder: o.custom ? 'rgba(78,205,196,.35)' : isDone ? 'rgb(var(--hair-rgb) / .05)' : 'rgb(var(--hair-rgb) / .09)',
           ...box(isDone, g.color),
         }
       })
@@ -426,10 +426,10 @@ function computeVals(st, a) {
         id: t.id, title: t.title, details: t.details, who: t.who,
         from: pretty(t.from), due: pretty(t.due),
         hasDetails: !!t.details, hasWho: !!t.who, hasFrom: !!t.from, hasDue: !!t.due,
-        dueColor: overdue ? '#FF6B8A' : '#8798AA',
-        dueBg: overdue ? 'rgba(255,107,138,.14)' : 'rgba(255,255,255,.05)',
+        dueColor: overdue ? '#FF6B8A' : 'var(--mute)',
+        dueBg: overdue ? 'rgba(255,107,138,.14)' : 'rgb(var(--hair-rgb) / .05)',
         accent: s.color,
-        titleColor: s.k === 'done' ? '#8798AA' : '#E8EDF3',
+        titleColor: s.k === 'done' ? 'var(--mute)' : 'var(--ring)',
         strike: s.k === 'done',
         showBack: si > 0, backLabel: si > 0 ? STAGES[si - 1].label : '',
         showFwd: si < 2, fwdLabel: si < 2 ? STAGES[si + 1].label : '',
@@ -531,16 +531,16 @@ function computeVals(st, a) {
     st.todos.filter((t) => t.due === key).forEach((t) =>
       items.push({
         label: '☑ ' + t.title, color: t.status === 'done' ? '#7BC96F' : '#FF8A3D',
-        bg: 'rgba(255,255,255,.06)', strike: t.status === 'done',
+        bg: 'rgb(var(--hair-rgb) / .06)', strike: t.status === 'done',
       }),
     )
     calDays.push({
       num: dnum, key,
       items: items.slice(0, 4),
       more: items.length > 4 ? '+' + (items.length - 4) + ' more' : '',
-      numColor: out ? '#3C4855' : key === todayIso ? '#0A0E14' : '#D8E1EA',
+      numColor: out ? 'var(--cal-out)' : key === todayIso ? '#0A0E14' : 'var(--soft)',
       numBg: key === todayIso ? '#F4D35E' : 'transparent',
-      bg: key === st.calSel ? 'rgba(78,205,196,.09)' : out ? 'rgba(255,255,255,.012)' : 'transparent',
+      bg: key === st.calSel ? 'rgba(78,205,196,.09)' : out ? 'rgb(var(--hair-rgb) / .012)' : 'transparent',
       select: () => a.selectDay(key),
     })
   }

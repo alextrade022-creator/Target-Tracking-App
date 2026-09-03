@@ -46,7 +46,7 @@ export function TickBox({ item, size = 15, onClick }) {
   return (
     <div
       onClick={onClick}
-      className="flex flex-none items-center justify-center rounded font-bold text-ink"
+      className="flex flex-none items-center justify-center rounded font-bold text-onaccent"
       style={{
         width: size,
         height: size,
@@ -62,7 +62,7 @@ export function TickBox({ item, size = 15, onClick }) {
 }
 
 /* Thin progress bar. `color` optional; width is a 0–100 percentage. */
-export function Bar({ pct, color, track = 'rgba(255,255,255,.09)', height = 5, className }) {
+export function Bar({ pct, color, track = 'rgb(var(--hair-rgb) / .09)', height = 5, className }) {
   return (
     <div className={cn('overflow-hidden rounded', className)} style={{ height, background: track }}>
       <div

@@ -23,7 +23,7 @@ export default function Dashboard({ vals, actions }) {
       </div>
 
       {/* Quick add */}
-      <div className="mt-[22px] flex flex-wrap items-center gap-3 rounded-2xl border border-white/[0.08] bg-surface px-[18px] py-3.5">
+      <div className="mt-[22px] flex flex-wrap items-center gap-3 rounded-2xl border border-hair/[0.08] bg-surface px-[18px] py-3.5">
         <div className="mono whitespace-nowrap text-[11px] tracking-[0.16em] text-mute2">QUICK ADD</div>
         <GoalSelect
           className="min-w-[170px] flex-none"
@@ -50,7 +50,7 @@ export default function Dashboard({ vals, actions }) {
         <button
           type="button"
           onClick={actions.addTask}
-          className="whitespace-nowrap rounded-lg bg-teal px-5 py-[9px] text-[13px] font-bold text-ink"
+          className="whitespace-nowrap rounded-lg bg-teal px-5 py-[9px] text-[13px] font-bold text-onaccent"
         >
           + Add task
         </button>
@@ -58,26 +58,29 @@ export default function Dashboard({ vals, actions }) {
 
       {/* Monthly roadmap */}
       <div className="panel mt-[22px]">
-        <div className="flex items-center justify-between border-b border-white/[0.08] px-[22px] py-[18px]">
+        <div className="flex items-center justify-between border-b border-hair/[0.08] px-[22px] py-[18px]">
           <div className="text-[19px] font-semibold tracking-[-0.01em]">Monthly roadmap</div>
           <div className="mono text-[11px] tracking-[0.14em] text-mute2">CLICK A MONTH TO SEE ITS WEEKLY PLAN</div>
         </div>
 
+        {/* Horizontal scroll on small screens keeps the 8-column grid aligned */}
+        <div className="overflow-x-auto">
+        <div className="min-w-[860px]">
         {/* Month header row */}
-        <div className="grid border-b border-white/[0.08] bg-white/[0.02]" style={{ gridTemplateColumns: '212px repeat(7,1fr)' }}>
+        <div className="grid border-b border-hair/[0.08] bg-hair/[0.02]" style={{ gridTemplateColumns: '212px repeat(7,1fr)' }}>
           <div className="mono px-[18px] py-3 text-[11px] tracking-[0.16em] text-mute2">TARGET</div>
           {months.map((m, i) => (
             <div
               key={i}
               onClick={m.select}
-              className="cursor-pointer border-l border-white/[0.07] px-3 py-2.5"
+              className="cursor-pointer border-l border-hair/[0.07] px-3 py-2.5"
               style={{ background: m.selected ? 'rgba(78,205,196,.10)' : m.current ? 'rgba(244,211,94,.06)' : 'transparent' }}
             >
               <div className="flex items-center gap-1.5">
-                <div className="text-[15px] font-semibold" style={{ color: m.selected ? '#4ECDC4' : '#D8E1EA' }}>{m.label}</div>
+                <div className="text-[15px] font-semibold" style={{ color: m.selected ? '#4ECDC4' : 'var(--soft)' }}>{m.label}</div>
                 <div className="mono text-[11px] text-mute2">'{m.yr}</div>
                 {m.current && (
-                  <div className="mono rounded bg-yellow px-[5px] py-px text-[9px] tracking-[0.1em] text-ink">NOW</div>
+                  <div className="mono rounded bg-yellow px-[5px] py-px text-[9px] tracking-[0.1em] text-onaccent">NOW</div>
                 )}
               </div>
               <div className="mt-[7px] flex items-center gap-[7px]">
@@ -90,7 +93,7 @@ export default function Dashboard({ vals, actions }) {
 
         {/* Goal rows */}
         {goals.map((g) => (
-          <div key={g.k} className="grid border-b border-white/[0.06]" style={{ gridTemplateColumns: '212px repeat(7,1fr)' }}>
+          <div key={g.k} className="grid border-b border-hair/[0.06]" style={{ gridTemplateColumns: '212px repeat(7,1fr)' }}>
             <div className="flex items-start gap-2.5 px-[18px] py-3.5">
               <div className="mt-1.5 h-2 w-2 flex-none rounded-sm" style={{ background: g.color }} />
               <div>
@@ -101,7 +104,7 @@ export default function Dashboard({ vals, actions }) {
             {g.cells.map((cell, ci) => (
               <div
                 key={ci}
-                className="flex min-h-[74px] flex-col gap-1.5 border-l border-white/[0.06] p-[9px]"
+                className="flex min-h-[74px] flex-col gap-1.5 border-l border-hair/[0.06] p-[9px]"
                 style={{ background: cell.current ? 'rgba(244,211,94,.055)' : 'transparent' }}
               >
                 {cell.ms.map((ms) => (
@@ -124,12 +127,14 @@ export default function Dashboard({ vals, actions }) {
             ))}
           </div>
         ))}
+        </div>
+        </div>
       </div>
 
       {/* Weekly plan */}
       {vals.showWeekly && (
         <div className="panel mt-[34px]">
-          <div className="flex items-center justify-between border-b border-white/[0.08] px-[22px] py-[18px]">
+          <div className="flex items-center justify-between border-b border-hair/[0.08] px-[22px] py-[18px]">
             <div className="flex items-baseline gap-3">
               <div className="text-[19px] font-semibold tracking-[-0.01em]">Weekly plan</div>
               <div className="mono text-[12px] tracking-[0.14em] text-yellow">{vals.selMonthLabel}</div>
@@ -139,9 +144,9 @@ export default function Dashboard({ vals, actions }) {
               <Bar className="w-[150px]" pct={vals.weekPct} color="#4ECDC4" />
             </div>
           </div>
-          <div className="grid grid-cols-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
             {weeks.map((w, wi) => (
-              <div key={wi} className="border-l border-white/[0.06] px-4 pb-5 pt-4">
+              <div key={wi} className="border-t border-hair/[0.06] px-4 pb-5 pt-4 sm:border-l xl:border-t-0">
                 <div className="flex items-baseline justify-between">
                   <div className="mono text-[12px] tracking-[0.14em] text-mute3">{w.label}</div>
                   <div className="mono text-[11px] text-mute2">{w.ratio}</div>
@@ -167,17 +172,17 @@ export default function Dashboard({ vals, actions }) {
       )}
 
       {/* Legend + reset */}
-      <div className="mt-[26px] flex items-center justify-between gap-6">
+      <div className="mt-[26px] flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-[22px]">
           <Legend swatch={<span className="h-[13px] w-[13px] rounded bg-teal" />} label="Completed" />
-          <Legend swatch={<span className="box-border h-[13px] w-[13px] rounded border-[1.5px] border-[#4A5A6B]" />} label="Pending" />
+          <Legend swatch={<span className="box-border h-[13px] w-[13px] rounded border-[1.5px] border-[var(--box-border)]" />} label="Pending" />
           <Legend swatch={<span className="box-border h-[13px] w-[13px] rounded border border-yellow/50 bg-yellow/[0.16]" />} label="Current month" />
           <div className="text-[12.5px] text-mute2">Deadlines: EduDot 31 Dec 26 · School 31 Jan 27 · all others 31 Mar 27</div>
         </div>
         <button
           type="button"
           onClick={actions.resetProgress}
-          className="mono rounded-lg border border-white/[0.14] px-4 py-[9px] text-[11px] tracking-[0.12em] text-mute"
+          className="mono rounded-lg border border-hair/[0.14] px-4 py-[9px] text-[11px] tracking-[0.12em] text-mute"
         >
           RESET PROGRESS
         </button>

@@ -2,6 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =====================================================================
+   Theme palettes. :root is the dark default; [data-theme="light"] flips
+   the neutrals. Accents are defined per-component and stay constant.
+   ===================================================================== */
+:root,
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0a0e14;
+  --panel: #111823;
+  --surface: #0f151e;
+  --card: #131a24;
+  --fg: #e8edf3;
+  --soft: #d8e1ea;
+  --mute: #8798aa;
+  --mute2: #5e7183;
+  --mute3: #a9b7c6;
+  --slate: #7c8b9e;
+  --hair-rgb: 255 255 255; /* hairline borders + subtle overlays */
+  --box-border: #4a5a6b; /* empty tick box outline */
+  --tick-done: #66798c; /* completed (struck-through) text */
+  --cal-out: #3c4855; /* out-of-month calendar day number */
+  --ring: #e8edf3; /* selected colour-swatch ring */
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #f4f6f9;
+  --panel: #ffffff;
+  --surface: #ffffff;
+  --card: #ffffff;
+  --fg: #16202b;
+  --soft: #26323f;
+  --mute: #5a6b7c;
+  --mute2: #8492a0;
+  --mute3: #3d4b59;
+  --slate: #647382;
+  --hair-rgb: 22 32 43; /* dark hairlines on light surfaces */
+  --box-border: #b3c0cc;
+  --tick-done: #9aa7b4;
+  --cal-out: #b9c4cf;
+  --ring: #16202b;
+}
+
 @layer base {
   body {
     @apply bg-ink text-fg font-sans antialiased m-0;
@@ -17,15 +60,15 @@
     @apply text-mute2;
   }
   select option {
-    background: #111823;
-    color: #e8edf3;
+    background: var(--panel);
+    color: var(--fg);
   }
 }
 
 @layer components {
-  /* Reusable dark form field used across the app */
+  /* Reusable dark/light form field used across the app */
   .field {
-    @apply w-full box-border bg-ink text-fg border border-white/[0.12] rounded-lg px-3 py-2.5 text-sm outline-none;
+    @apply w-full box-border bg-ink text-fg border border-hair/[0.14] rounded-lg px-3 py-2.5 text-sm outline-none;
   }
   .field:focus {
     @apply border-teal/60;
@@ -33,9 +76,9 @@
   /* Native <select> with the app's custom dropdown arrow (drawn with two
      gradients — there is no Tailwind utility for a CSS-drawn caret). */
   .select {
-    @apply w-full box-border bg-ink text-fg border border-white/[0.12] rounded-lg py-2.5 pl-3 pr-8 text-sm outline-none appearance-none cursor-pointer;
-    background-image: linear-gradient(45deg, transparent 50%, #8798aa 50%),
-      linear-gradient(135deg, #8798aa 50%, transparent 50%);
+    @apply w-full box-border bg-ink text-fg border border-hair/[0.14] rounded-lg py-2.5 pl-3 pr-8 text-sm outline-none appearance-none cursor-pointer;
+    background-image: linear-gradient(45deg, transparent 50%, var(--mute) 50%),
+      linear-gradient(135deg, var(--mute) 50%, transparent 50%);
     background-position: calc(100% - 17px) 55%, calc(100% - 12px) 55%;
     background-size: 5px 5px, 5px 5px;
     background-repeat: no-repeat;
@@ -46,12 +89,11 @@
   .mono {
     @apply font-mono;
   }
-  /* Card / panel chrome */
   .panel {
-    @apply rounded-2xl bg-surface border border-white/[0.08] overflow-hidden;
+    @apply rounded-2xl bg-surface border border-hair/[0.08] overflow-hidden;
   }
   .stat {
-    @apply rounded-2xl bg-panel border border-white/[0.08];
+    @apply rounded-2xl bg-panel border border-hair/[0.08];
   }
 }
 
