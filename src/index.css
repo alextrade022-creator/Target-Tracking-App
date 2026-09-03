@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-ink text-fg font-sans antialiased m-0;
+  }
+  a {
+    @apply text-teal no-underline;
+  }
+  a:hover {
+    @apply text-teal-lt;
+  }
+  input::placeholder,
+  textarea::placeholder {
+    @apply text-mute2;
+  }
+  select option {
+    background: #111823;
+    color: #e8edf3;
+  }
+}
+
+@layer components {
+  /* Reusable dark form field used across the app */
+  .field {
+    @apply w-full box-border bg-ink text-fg border border-white/[0.12] rounded-lg px-3 py-2.5 text-sm outline-none;
+  }
+  .field:focus {
+    @apply border-teal/60;
+  }
+  /* Native <select> with the app's custom dropdown arrow (drawn with two
+     gradients — there is no Tailwind utility for a CSS-drawn caret). */
+  .select {
+    @apply w-full box-border bg-ink text-fg border border-white/[0.12] rounded-lg py-2.5 pl-3 pr-8 text-sm outline-none appearance-none cursor-pointer;
+    background-image: linear-gradient(45deg, transparent 50%, #8798aa 50%),
+      linear-gradient(135deg, #8798aa 50%, transparent 50%);
+    background-position: calc(100% - 17px) 55%, calc(100% - 12px) 55%;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+  }
+  .select:focus {
+    @apply border-teal/60;
+  }
+  .mono {
+    @apply font-mono;
+  }
+  /* Card / panel chrome */
+  .panel {
+    @apply rounded-2xl bg-surface border border-white/[0.08] overflow-hidden;
+  }
+  .stat {
+    @apply rounded-2xl bg-panel border border-white/[0.08];
+  }
+}
+
+/* Print page geometry — no Tailwind equivalent for @page */
+@page {
+  margin: 12mm;
+}
+
+/* The report prints on a white page; the dark app chrome drops away. */
+@media print {
+  body {
+    background: #ffffff;
+  }
+}
