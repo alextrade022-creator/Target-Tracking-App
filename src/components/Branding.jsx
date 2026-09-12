@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { cn } from '../lib/helpers'
 
 export default function Branding({ vals, actions }) {
@@ -50,10 +51,11 @@ export default function Branding({ vals, actions }) {
 }
 
 function ContentCard({ c }) {
+  const [editing, setEditing] = useState(false)
   const statusColor = c.complete ? '#7BC96F' : c.stageDone > 0 ? '#F4D35E' : 'var(--mute)'
   return (
     <div className={cn('panel px-[22px] py-5', c.complete && 'border-green/40')}>
-      {/* Status + remove */}
+      {/* Status + edit + remove */}
       <div className="mb-3.5 flex items-center justify-between gap-3">
         <span
           className="mono rounded-md px-2.5 py-1 text-[10.5px] tracking-[0.12em]"
@@ -61,17 +63,37 @@ function ContentCard({ c }) {
         >
           {c.statusLabel}
         </span>
-        <button type="button" onClick={c.remove} className="px-1 text-[16px] leading-none text-mute2 hover:text-fg" aria-label="Remove content">
-          ×
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setEditing((v) => !v)}
+            className={cn(
+              'mono rounded-md border px-2.5 py-1 text-[10.5px] tracking-[0.12em] transition-colors',
+              editing ? 'border-teal bg-teal text-onaccent' : 'border-hair/[0.14] text-mute hover:text-fg',
+            )}
+          >
+            {editing ? 'DONE' : 'EDIT'}
+          </button>
+          <button type="button" onClick={c.remove} className="px-1 text-[16px] leading-none text-mute2 hover:text-fg" aria-label="Remove content">
+            ×
+          </button>
+        </div>
       </div>
 
-      {/* Hook / Body / CTA */}
-      <div className="grid grid-cols-1 gap-3.5 md:grid-cols-3">
-        <Part label="HOOK" text={c.hook} />
-        <Part label="BODY" text={c.body} />
-        <Part label="CTA" text={c.cta} />
-      </div>
+      {/* Hook / Body / CTA — read-only, or editable when editing */}
+      {editing ? (
+        <div className="grid grid-cols-1 gap-3.5 md:grid-cols-3">
+          <EditBox label="HOOK" value={c.hookRaw} onChange={(e) => c.patch({ hook: e.target.value })} />
+          <EditBox label="BODY" value={c.bodyRaw} onChange={(e) => c.patch({ body: e.target.value })} />
+          <EditBox label="CTA" value={c.ctaRaw} onChange={(e) => c.patch({ cta: e.target.value })} />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-3.5 md:grid-cols-3">
+          <Part label="HOOK" text={c.hook} />
+          <Part label="BODY" text={c.body} />
+          <Part label="CTA" text={c.cta} />
+        </div>
+      )}
 
       {/* Production checklist */}
       <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -115,6 +137,15 @@ function WriteBox({ label, placeholder, value, onChange }) {
     <div>
       <div className="mono mb-[7px] text-[11px] tracking-[0.16em] text-mute2">{label}</div>
       <textarea className="field min-h-[96px] resize-y leading-[1.5]" placeholder={placeholder} value={value} onChange={onChange} />
+    </div>
+  )
+}
+
+function EditBox({ label, value, onChange }) {
+  return (
+    <div>
+      <div className="mono mb-1.5 text-[10px] tracking-[0.16em] text-mute2">{label}</div>
+      <textarea className="field min-h-[88px] resize-y leading-[1.5]" value={value} onChange={onChange} />
     </div>
   )
 }

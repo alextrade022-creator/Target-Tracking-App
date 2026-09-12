@@ -296,11 +296,11 @@ export function useTargetTracker() {
   const setCal = useCallback((patch) => update(patch), [update])
 
   /* --------------------- derived view values --------------------- */
-  const vals = useMemo(() => computeVals(state, { toggle, editText, hideItem, moveTodo, archiveTodo, removeTodo, removeTask, restoreArchived, dropArchived, patchMeeting, removeMeeting, editGoal, removeGoal, setSel, setFilter, selectDay, setM, setCal, toggleBrandingStage, toggleBrandingPlatform, setBrandingDate, removeBranding }), [
+  const vals = useMemo(() => computeVals(state, { toggle, editText, hideItem, moveTodo, archiveTodo, removeTodo, removeTask, restoreArchived, dropArchived, patchMeeting, removeMeeting, editGoal, removeGoal, setSel, setFilter, selectDay, setM, setCal, toggleBrandingStage, toggleBrandingPlatform, setBrandingDate, removeBranding, patchBranding }), [
     state, toggle, editText, hideItem, moveTodo, archiveTodo, removeTodo, removeTask,
     restoreArchived, dropArchived, patchMeeting, removeMeeting, editGoal, removeGoal,
     setSel, setFilter, selectDay, setM, setCal,
-    toggleBrandingStage, toggleBrandingPlatform, setBrandingDate, removeBranding,
+    toggleBrandingStage, toggleBrandingPlatform, setBrandingDate, removeBranding, patchBranding,
   ])
 
   return {
@@ -675,6 +675,9 @@ function computeVals(st, a) {
       return {
         id: b?.id,
         hook: na(b?.hook), body: na(b?.body), cta: na(b?.cta),
+        // Raw (un-"N/A") values for the edit form, plus a patch callback.
+        hookRaw: b?.hook ?? '', bodyRaw: b?.body ?? '', ctaRaw: b?.cta ?? '',
+        patch: (p) => a.patchBranding(b?.id, p), // named 'patch' to avoid colliding with the boolean `edit` stage below
         hasHook: !!b?.hook, hasBody: !!b?.body, hasCta: !!b?.cta,
         shoot, edit, post, complete, stageDone,
         statusLabel: complete ? 'Completed' : stageDone === 0 ? 'Not started' : stageDone + '/3 done',
