@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CONFIG } from '../config'
 import {
   MONTHS, FULL, NOW, GOALS, WEEKLY, STAGES, DUE_ISO, PALETTE,
-  MONTH_NAMES, DOW,
+  MONTH_NAMES, DOW, BRAND_STAGES, PLATFORMS,
 } from '../lib/constants'
 import { iso, fmt, pretty, todayLabel } from '../lib/helpers'
 import { getState, putSlice } from '../lib/api'
@@ -32,10 +32,12 @@ const initialState = () => ({
   calSel: '2026-09-02',
   xgoals: [],
   gedits: {},
+  branding: [],
   gdraft: { name: '', target: '', due: '2027-03-31', color: '#5FA8FF' },
   draft: { goal: 'edudot', month: NOW, week: 'ms', text: '' },
   tdraft: { title: '', who: '', from: iso(new Date()), due: '', details: '' },
   mdraft: { title: '', who: '', date: '2026-09-02', time: '10:00', notes: '' },
+  bdraft: { hook: '', body: '', cta: '' },
 })
 
 /* helper: milestone map for a goal, scaled for the student-band goal */
@@ -76,6 +78,7 @@ export function useTargetTracker() {
           meetings: data.meetings ?? [],
           xgoals: data.goals ?? [],
           gedits: data.goalEdits ?? {},
+          branding: data.branding ?? [],
         })
       }
       hydrated.current = true
@@ -99,6 +102,7 @@ export function useTargetTracker() {
   useEffect(() => persist('meetings', state.meetings), [state.meetings, persist])
   useEffect(() => persist('goals', state.xgoals), [state.xgoals, persist])
   useEffect(() => persist('goalEdits', state.gedits), [state.gedits, persist])
+  useEffect(() => persist('branding', state.branding), [state.branding, persist])
 
   /* ---- print handling ---- */
   useEffect(() => {
@@ -125,6 +129,48 @@ export function useTargetTracker() {
   const setT = useCallback((patch) => update((s) => ({ tdraft: { ...s.tdraft, ...patch } })), [update])
   const setM = useCallback((patch) => update((s) => ({ mdraft: { ...s.mdraft, ...patch } })), [update])
   const setG = useCallback((patch) => update((s) => ({ gdraft: { ...s.gdraft, ...patch } })), [update])
+  const setB = useCallback((patch) => update((s) => ({ bdraft: { ...s.bdraft, ...patch } })), [update])
+
+  /* ---- personal branding ---- */
+  const addBranding = useCallback(() => {
+    update((s) => {
+      const d = s.bdraft || {}
+      const hook = (d.hook || '').trim()
+      const body = (d.body || '').trim()
+      const cta = (d.cta || '').trim()
+      if (!hook && !body && !cta) return {} // nothing written — don't add an empty piece
+      const item = {
+        id: 'b' + Date.now(), hook, body, cta,
+        shoot: false, edit: false, post: false,
+        platforms: [], postedDate: '', createdAt: Date.now(),
+      }
+      return { branding: (s.branding || []).concat([item]), bdraft: { hook: '', body: '', cta: '' } }
+    })
+  }, [update])
+
+  const patchBranding = useCallback((id, patch) => {
+    update((s) => ({ branding: (s.branding || []).map((b) => (b.id === id ? { ...b, ...patch } : b)) }))
+  }, [update])
+
+  const toggleBrandingStage = useCallback((id, stage) => {
+    update((s) => ({
+      branding: (s.branding || []).map((b) => (b.id === id ? { ...b, [stage]: !b[stage] } : b)),
+    }))
+  }, [update])
+
+  const toggleBrandingPlatform = useCallback((id, platform) => {
+    update((s) => ({
+      branding: (s.branding || []).map((b) => {
+        if (b.id !== id) return b
+        const cur = Array.isArray(b.platforms) ? b.platforms : []
+        const platforms = cur.includes(platform) ? cur.filter((p) => p !== platform) : cur.concat([platform])
+        return { ...b, platforms }
+      }),
+    }))
+  }, [update])
+
+  const setBrandingDate = useCallback((id, date) => patchBranding(id, { postedDate: date }), [patchBranding])
+  const removeBranding = useCallback((id) => update((s) => ({ branding: (s.branding || []).filter((b) => b.id !== id) })), [update])
 
   const addTask = useCallback(() => {
     update((s) => {
@@ -250,10 +296,11 @@ export function useTargetTracker() {
   const setCal = useCallback((patch) => update(patch), [update])
 
   /* --------------------- derived view values --------------------- */
-  const vals = useMemo(() => computeVals(state, { toggle, editText, hideItem, moveTodo, archiveTodo, removeTodo, removeTask, restoreArchived, dropArchived, patchMeeting, removeMeeting, editGoal, removeGoal, setSel, setFilter, selectDay, setM, setCal }), [
+  const vals = useMemo(() => computeVals(state, { toggle, editText, hideItem, moveTodo, archiveTodo, removeTodo, removeTask, restoreArchived, dropArchived, patchMeeting, removeMeeting, editGoal, removeGoal, setSel, setFilter, selectDay, setM, setCal, toggleBrandingStage, toggleBrandingPlatform, setBrandingDate, removeBranding }), [
     state, toggle, editText, hideItem, moveTodo, archiveTodo, removeTodo, removeTask,
     restoreArchived, dropArchived, patchMeeting, removeMeeting, editGoal, removeGoal,
     setSel, setFilter, selectDay, setM, setCal,
+    toggleBrandingStage, toggleBrandingPlatform, setBrandingDate, removeBranding,
   ])
 
   return {
@@ -264,6 +311,8 @@ export function useTargetTracker() {
       removeTodo, archiveTodo, restoreArchived, dropArchived, editGoal, addGoal,
       removeGoal, addMeeting, patchMeeting, removeMeeting, shiftMonth, setNotes,
       resetProgress, exportPdf, goPage, setSel, setFilter, setRepMonth, restoreAll,
+      setB, addBranding, patchBranding, toggleBrandingStage, toggleBrandingPlatform,
+      setBrandingDate, removeBranding,
     },
   }
 }
@@ -274,7 +323,23 @@ export function useTargetTracker() {
    show/empty flags as booleans for conditional rendering).
    ===================================================================== */
 function computeVals(st, a) {
-  const done = st.done
+  // Fallback for any displayed value that a stored document may be missing.
+  const na = (v) => (v === null || v === undefined || v === '' ? 'N/A' : v)
+
+  // Coerce persisted slices to the expected shape. Data comes from MongoDB, so a
+  // document could be missing or the wrong type — guard against undefined maps
+  // (`map[id]` would throw) and non-array slices (`.filter`/`.map` would throw).
+  const done = st.done || {}
+  const hiddenMap = st.hidden || {}
+  const editsMap = st.edits || {}
+  const geditsMap = st.gedits || {}
+  const customArr = Array.isArray(st.custom) ? st.custom : []
+  const todosArr = Array.isArray(st.todos) ? st.todos : []
+  const archiveArr = Array.isArray(st.archive) ? st.archive : []
+  const meetingsArr = Array.isArray(st.meetings) ? st.meetings : []
+  const xgoalsArr = Array.isArray(st.xgoals) ? st.xgoals : []
+  const brandingArr = Array.isArray(st.branding) ? st.branding : []
+
   const sel = st.sel
   const target = CONFIG.targetStudents ?? 160
   const scale = target / 160
@@ -288,8 +353,8 @@ function computeVals(st, a) {
   })
 
   /* ---- combine base goals with edits + custom goals ---- */
-  const ed = st.gedits
-  const ALL = GOALS.concat(st.xgoals.map((g) => ({ ms: {}, ...g }))).map((g) => {
+  const ed = geditsMap
+  const ALL = GOALS.concat(xgoalsArr.map((g) => ({ ms: {}, ...g }))).map((g) => {
     const e = ed[g.k]
     const dueIso = (e && e.due) || g.dueIso || DUE_ISO[g.k] || '2027-03-31'
     if (!e) return { ...g, dueIso }
@@ -302,9 +367,9 @@ function computeVals(st, a) {
     }
   })
 
-  const nameOf = (k) => (ALL.find((g) => g.k === k) || {}).name || k
-  const colorOf = (k) => (ALL.find((g) => g.k === k) || {}).color || '#4ECDC4'
-  const txt = (id, fallback) => (st.edits[id] != null ? st.edits[id] : fallback)
+  const nameOf = (k) => (ALL.find((g) => g && g.k === k) || {}).name || k || 'N/A'
+  const colorOf = (k) => (ALL.find((g) => g && g.k === k) || {}).color || '#4ECDC4'
+  const txt = (id, fallback) => (editsMap[id] != null ? editsMap[id] : fallback)
 
   let allDone = 0
   let allTotal = 0
@@ -317,10 +382,10 @@ function computeVals(st, a) {
     let gt = 0
     const cells = MONTHS.map((m, mi) => {
       let base = (ms[mi] || []).map((t, i) => ({ t, id: 'm:' + g.k + ':' + mi + ':' + i }))
-      st.custom.forEach((c) => {
+      customArr.forEach((c) => {
         if (c.goal === g.k && c.month === mi && c.week === 'ms') base.push({ t: c.text, id: 'x:' + c.id, custom: true })
       })
-      base = base.filter((o) => !st.hidden[o.id]).map((o) => ({ ...o, t: txt(o.id, o.t) }))
+      base = base.filter((o) => !hiddenMap[o.id]).map((o) => ({ ...o, t: txt(o.id, o.t) }))
       const list = base.map((o) => {
         const isDone = !!done[o.id]
         gt++; monthTotal[mi]++
@@ -336,8 +401,8 @@ function computeVals(st, a) {
     })
     allDone += gd; allTotal += gt
     return {
-      k: g.k, name: g.name, short: g.short, color: g.color, due: g.due, cells,
-      target: g.targetOverride || (g.steps ? target + ' students enrolled (band 120–200)' : g.target),
+      k: g?.k, name: na(g?.name), short: na(g?.short), color: g?.color, due: na(g?.due), cells,
+      target: g?.targetOverride || (g?.steps ? target + ' students enrolled (band 120–200)' : na(g?.target)),
       ratio: gd + '/' + gt, pct: gt ? Math.round((gd / gt) * 100) : 0,
     }
   })
@@ -355,11 +420,11 @@ function computeVals(st, a) {
     const out = []
     ;(WEEKLY[mi] || []).forEach((tasks, wi) => {
       tasks.forEach((t, ti) => out.push({ id: 'w:' + mi + ':' + wi + ':' + ti, text: t, wi }))
-      st.custom.forEach((c) => {
+      customArr.forEach((c) => {
         if (c.month === mi && c.week === String(wi)) out.push({ id: 'x:' + c.id, text: c.text, wi, custom: true, goal: c.goal })
       })
     })
-    return out.filter((o) => !st.hidden[o.id]).map((o) => ({ ...o, text: txt(o.id, o.text) }))
+    return out.filter((o) => !hiddenMap[o.id]).map((o) => ({ ...o, text: txt(o.id, o.text) }))
   }
 
   let wd = 0
@@ -376,13 +441,17 @@ function computeVals(st, a) {
     return { label: 'WEEK ' + (wi + 1), tasks: list, ratio: d + '/' + rows.length, pct: rows.length ? Math.round((d / rows.length) * 100) : 0 }
   })
 
-  const customList = st.custom.filter((c) => !st.hidden['x:' + c.id]).map((c) => {
+  const customList = customArr.filter((c) => !hiddenMap['x:' + c.id]).map((c) => {
     const id = 'x:' + c.id
+    const mo = MONTHS[c?.month]
+    const where = mo
+      ? mo.label + " '" + mo.yr + (c.week === 'ms' ? ' · MILESTONE' : ' · WEEK ' + (Number(c.week) + 1))
+      : 'N/A'
     return {
-      id, text: txt(id, c.text), goalName: nameOf(c.goal), color: colorOf(c.goal),
-      where: MONTHS[c.month].label + " '" + MONTHS[c.month].yr + (c.week === 'ms' ? ' · MILESTONE' : ' · WEEK ' + (Number(c.week) + 1)),
-      toggle: () => a.toggle(id), remove: () => a.removeTask(c.id),
-      ...box(!!done[id], colorOf(c.goal)),
+      id, text: na(txt(id, c?.text)), goalName: nameOf(c?.goal), color: colorOf(c?.goal),
+      where,
+      toggle: () => a.toggle(id), remove: () => a.removeTask(c?.id),
+      ...box(!!done[id], colorOf(c?.goal)),
     }
   })
 
@@ -403,13 +472,13 @@ function computeVals(st, a) {
       const ms = msFor(g, scale)
       ;(ms[mi] || []).forEach((t, i) => {
         const id = 'm:' + g.k + ':' + mi + ':' + i
-        if (st.hidden[id]) return
-        msRaw.push({ id, text: txt(id, t), month: m.label + " '" + m.yr, tag: g.name, color: g.color })
+        if (hiddenMap[id]) return
+        msRaw.push({ id, text: txt(id, t), month: m.label + " '" + m.yr, tag: na(g?.name), color: g?.color })
       })
     })
-    st.custom.forEach((c) => {
+    customArr.forEach((c) => {
       const id = 'x:' + c.id
-      if (c.month !== mi || c.week !== 'ms' || st.hidden[id]) return
+      if (c.month !== mi || c.week !== 'ms' || hiddenMap[id]) return
       msRaw.push({ id, text: txt(id, c.text), month: m.label + " '" + m.yr, tag: nameOf(c.goal) + ' · ADDED', color: colorOf(c.goal) })
     })
   })
@@ -432,12 +501,12 @@ function computeVals(st, a) {
 
   const todayIso = iso(new Date())
   const columns = STAGES.map((s, si) => {
-    const cards = st.todos.filter((t) => t.status === s.k).map((t) => {
-      const overdue = t.due && t.due < todayIso && t.status !== 'done'
+    const cards = todosArr.filter((t) => t?.status === s.k).map((t) => {
+      const overdue = t?.due && t.due < todayIso && t?.status !== 'done'
       return {
-        id: t.id, title: t.title, details: t.details, who: t.who,
-        from: pretty(t.from), due: pretty(t.due),
-        hasDetails: !!t.details, hasWho: !!t.who, hasFrom: !!t.from, hasDue: !!t.due,
+        id: t?.id, title: na(t?.title), details: t?.details, who: t?.who,
+        from: pretty(t?.from), due: pretty(t?.due),
+        hasDetails: !!t?.details, hasWho: !!t?.who, hasFrom: !!t?.from, hasDue: !!t?.due,
         dueColor: overdue ? '#FF6B8A' : 'var(--mute)',
         dueBg: overdue ? 'rgba(255,107,138,.14)' : 'rgb(var(--hair-rgb) / .05)',
         accent: s.color,
@@ -456,9 +525,9 @@ function computeVals(st, a) {
     return { label: s.label, color: s.color, tint: s.tint, cards, count: cards.length, empty: cards.length === 0 }
   })
 
-  const history = st.archive.map((t) => ({
-    id: t.id, title: t.title, who: t.who || '—', due: pretty(t.due), at: pretty(t.at),
-    restore: () => a.restoreArchived(t.id), remove: () => a.dropArchived(t.id),
+  const history = archiveArr.map((t) => ({
+    id: t?.id, title: na(t?.title), who: na(t?.who), due: t?.due ? pretty(t.due) : 'N/A', at: t?.at ? pretty(t.at) : 'N/A',
+    restore: () => a.restoreArchived(t?.id), remove: () => a.dropArchived(t?.id),
   }))
 
   /* ---- report ---- */
@@ -468,14 +537,14 @@ function computeVals(st, a) {
     const ms = msFor(g, scale)
     ;(ms[rm] || []).forEach((t, i) => {
       const id = 'm:' + g.k + ':' + rm + ':' + i
-      if (st.hidden[id]) return
-      repItems.push({ id, text: txt(id, t), tag: g.name.toUpperCase() })
+      if (hiddenMap[id]) return
+      repItems.push({ id, text: na(txt(id, t)), tag: (g?.name || 'N/A').toUpperCase() })
     })
   })
-  st.custom.forEach((c) => {
+  customArr.forEach((c) => {
     const id = 'x:' + c.id
-    if (c.month !== rm || c.week !== 'ms' || st.hidden[id]) return
-    repItems.push({ id, text: txt(id, c.text), tag: nameOf(c.goal).toUpperCase() })
+    if (c.month !== rm || c.week !== 'ms' || hiddenMap[id]) return
+    repItems.push({ id, text: na(txt(id, c?.text)), tag: String(nameOf(c?.goal)).toUpperCase() })
   })
   const repDone = repItems.filter((i) => done[i.id])
   const repPending = repItems.filter((i) => !done[i.id])
@@ -491,28 +560,28 @@ function computeVals(st, a) {
       if (mi > rm) return
       ;(ms[mi] || []).forEach((t, i) => {
         const id = 'm:' + g.k + ':' + mi + ':' + i
-        if (st.hidden[id]) return
+        if (hiddenMap[id]) return
         upT++
         if (done[id]) upD++
       })
     })
-    const gv = goals[gi]
+    const gv = goals[gi] || {}
     let status = 'Behind'
     let sc = '#B4441E'
     let sb = 'rgba(196,106,27,.14)'
     if (gv.pct === 100) { status = 'Complete'; sc = '#1F7A45'; sb = 'rgba(46,158,91,.14)' }
     else if (upD >= upT) { status = 'On track'; sc = '#1F6F9E'; sb = 'rgba(31,111,158,.12)' }
-    return { name: g.name, target: gv.target, due: g.due, ratio: gv.ratio, status, statusColor: sc, statusBg: sb }
+    return { name: na(g?.name), target: na(gv.target), due: na(g?.due), ratio: gv.ratio ?? 'N/A', status, statusColor: sc, statusBg: sb }
   })
 
-  const tDone = st.todos.filter((t) => t.status === 'done').length + st.archive.length
-  const tAll = st.todos.length + st.archive.length
-  const repTodos = st.todos.concat(st.archive).map((t) => {
+  const tDone = todosArr.filter((t) => t?.status === 'done').length + archiveArr.length
+  const tAll = todosArr.length + archiveArr.length
+  const repTodos = todosArr.concat(archiveArr).map((t) => {
     const s =
-      t.status === 'done' ? { l: 'DONE', c: '#1F7A45', b: 'rgba(46,158,91,.14)' }
-      : t.status === 'prog' ? { l: 'IN PROGRESS', c: '#8A6A00', b: 'rgba(244,211,94,.2)' }
+      t?.status === 'done' ? { l: 'DONE', c: '#1F7A45', b: 'rgba(46,158,91,.14)' }
+      : t?.status === 'prog' ? { l: 'IN PROGRESS', c: '#8A6A00', b: 'rgba(244,211,94,.2)' }
       : { l: 'TODO', c: '#B4441E', b: 'rgba(196,106,27,.14)' }
-    return { title: t.title, who: t.who || '—', due: pretty(t.due), status: s.l, statusColor: s.c, statusBg: s.b }
+    return { title: na(t?.title), who: na(t?.who), due: t?.due ? pretty(t.due) : 'N/A', status: s.l, statusColor: s.c, statusBg: s.b }
   })
 
   /* ---- calendar ---- */
@@ -536,14 +605,14 @@ function computeVals(st, a) {
     else if (n > daysInMonth) { mo++; dnum = n - daysInMonth; out = true; if (mo > 11) { mo = 0; y++ } }
     const key = fmt(y, mo, dnum)
     const items = []
-    st.meetings.filter((m) => m.date === key).forEach((m) => {
-      const s = ST[m.status] || ST.pending
-      items.push({ label: (m.time ? m.time + ' ' : '') + m.title, color: s.c, bg: s.b, strike: m.status === 'cancelled' })
+    meetingsArr.filter((m) => m?.date === key).forEach((m) => {
+      const s = ST[m?.status] || ST.pending
+      items.push({ label: (m?.time ? m.time + ' ' : '') + na(m?.title), color: s.c, bg: s.b, strike: m?.status === 'cancelled' })
     })
-    st.todos.filter((t) => t.due === key).forEach((t) =>
+    todosArr.filter((t) => t?.due === key).forEach((t) =>
       items.push({
-        label: '☑ ' + t.title, color: t.status === 'done' ? '#7BC96F' : '#FF8A3D',
-        bg: 'rgb(var(--hair-rgb) / .06)', strike: t.status === 'done',
+        label: '☑ ' + na(t?.title), color: t?.status === 'done' ? '#7BC96F' : '#FF8A3D',
+        bg: 'rgb(var(--hair-rgb) / .06)', strike: t?.status === 'done',
       }),
     )
     calDays.push({
@@ -557,14 +626,14 @@ function computeVals(st, a) {
     })
   }
 
-  const dayMeetings = st.meetings
-    .filter((m) => m.date === st.calSel)
-    .sort((x, y) => (x.time || '').localeCompare(y.time || ''))
+  const dayMeetings = meetingsArr
+    .filter((m) => m?.date === st.calSel)
+    .sort((x, y) => (x?.time || '').localeCompare(y?.time || ''))
     .map((m) => {
-      const s = ST[m.status] || ST.pending
+      const s = ST[m?.status] || ST.pending
       return {
-        id: m.id, title: m.title, who: m.who || '—', time: m.time || '—', notes: m.notes, hasNotes: !!m.notes,
-        statusLabel: s.l, statusColor: s.c, statusBg: s.b, strike: m.status === 'cancelled', date: m.date,
+        id: m?.id, title: na(m?.title), who: na(m?.who), time: m?.time || 'N/A', notes: m?.notes, hasNotes: !!m?.notes,
+        statusLabel: s.l, statusColor: s.c, statusBg: s.b, strike: m?.status === 'cancelled', date: m?.date,
         setDone: () => a.patchMeeting(m.id, { status: 'done' }),
         setPending: () => a.patchMeeting(m.id, { status: 'pending' }),
         setCancel: () => a.patchMeeting(m.id, { status: 'cancelled' }),
@@ -573,26 +642,69 @@ function computeVals(st, a) {
       }
     })
 
-  const dayTodos = st.todos.filter((t) => t.due === st.calSel).map((t) => ({
-    title: t.title, who: t.who || '—',
-    statusLabel: t.status === 'done' ? 'Done' : t.status === 'prog' ? 'In progress' : 'Todo',
-    statusColor: t.status === 'done' ? '#7BC96F' : t.status === 'prog' ? '#F4D35E' : '#FF8A3D',
+  const dayTodos = todosArr.filter((t) => t?.due === st.calSel).map((t) => ({
+    title: na(t?.title), who: na(t?.who),
+    statusLabel: t?.status === 'done' ? 'Done' : t?.status === 'prog' ? 'In progress' : 'Todo',
+    statusColor: t?.status === 'done' ? '#7BC96F' : t?.status === 'prog' ? '#F4D35E' : '#FF8A3D',
   }))
 
-  const selParts = st.calSel.split('-')
-  const upcoming = st.meetings
-    .filter((m) => m.date >= todayIso && m.status === 'pending')
-    .sort((x, y) => (x.date + x.time).localeCompare(y.date + y.time))
+  const selParts = (st.calSel || '').split('-')
+  const upcoming = meetingsArr
+    .filter((m) => m?.date && m.date >= todayIso && m?.status === 'pending')
+    .sort((x, y) => ((x?.date || '') + (x?.time || '')).localeCompare((y?.date || '') + (y?.time || '')))
     .slice(0, 5)
     .map((m) => ({
-      title: m.title, when: pretty(m.date) + (m.time ? ' · ' + m.time : ''), who: m.who || '—',
-      go: () => a.setCal({ calSel: m.date, calY: Number(m.date.slice(0, 4)), calM: Number(m.date.slice(5, 7)) - 1 }),
+      title: na(m?.title), when: pretty(m?.date) + (m?.time ? ' · ' + m.time : ''), who: na(m?.who),
+      go: () => a.setCal({ calSel: m?.date, calY: Number((m?.date || '').slice(0, 4)), calM: Number((m?.date || '').slice(5, 7)) - 1 }),
     }))
 
+  /* ---- personal branding ---- */
+  // Ordering (top → bottom): fully done (shoot+edit+post) > shoot+edit > shoot > none.
+  // Weight post>edit>shoot so more finished pieces float up; newest first within a tier.
+  const brandRank = (b) => (b?.post ? 4 : 0) + (b?.edit ? 2 : 0) + (b?.shoot ? 1 : 0)
+  const branding = brandingArr
+    .slice()
+    .sort((x, y) => brandRank(y) - brandRank(x) || (y?.createdAt || 0) - (x?.createdAt || 0))
+    .map((b) => {
+      const shoot = !!b?.shoot
+      const edit = !!b?.edit
+      const post = !!b?.post
+      const platforms = Array.isArray(b?.platforms) ? b.platforms : []
+      const stageDone = (shoot ? 1 : 0) + (edit ? 1 : 0) + (post ? 1 : 0)
+      const complete = shoot && edit && post
+      return {
+        id: b?.id,
+        hook: na(b?.hook), body: na(b?.body), cta: na(b?.cta),
+        hasHook: !!b?.hook, hasBody: !!b?.body, hasCta: !!b?.cta,
+        shoot, edit, post, complete, stageDone,
+        statusLabel: complete ? 'Completed' : stageDone === 0 ? 'Not started' : stageDone + '/3 done',
+        stages: BRAND_STAGES.map((s) => ({
+          k: s.k, label: s.label, color: s.color, on: !!b?.[s.k],
+          toggle: () => a.toggleBrandingStage(b?.id, s.k),
+        })),
+        platformChips: PLATFORMS.map((p) => ({
+          k: p.k, label: p.label, color: p.color, on: platforms.includes(p.k),
+          toggle: () => a.toggleBrandingPlatform(b?.id, p.k),
+        })),
+        postedDate: b?.postedDate || '',
+        postedLabel: b?.postedDate ? pretty(b.postedDate) : 'N/A',
+        setDate: (e) => a.setBrandingDate(b?.id, e.target.value),
+        remove: () => a.removeBranding(b?.id),
+      }
+    })
+  const brandingStats = {
+    total: brandingArr.length,
+    shoot: brandingArr.filter((b) => b?.shoot).length,
+    edit: brandingArr.filter((b) => b?.edit).length,
+    post: brandingArr.filter((b) => b?.post).length,
+    complete: brandingArr.filter((b) => b?.shoot && b?.edit && b?.post).length,
+  }
+
   const page = st.printing ? 'report' : st.page
-  const hiddenCount = Object.keys(st.hidden).length
+  const hiddenCount = Object.keys(hiddenMap).length
 
   return {
+    branding, brandingStats, bdraft: st.bdraft,
     ownerName: CONFIG.ownerName ?? 'My Targets & Growth Plan',
     showWeekly: CONFIG.showWeeklyPlan ?? true,
     page,
@@ -604,23 +716,23 @@ function computeVals(st, a) {
     goals, months, weeks, sel, selMonthLabel: FULL[sel],
     weekRatio: wd + '/' + wt, weekPct: wt ? Math.round((wd / wt) * 100) : 0,
     // notes / new tasks
-    goalOptions: ALL.map((g) => ({ k: g.k, name: g.name })),
+    goalOptions: ALL.map((g) => ({ k: g?.k, name: na(g?.name) })),
     draft: st.draft,
     addHint: 'Goes to ' + nameOf(st.draft.goal) + ' · ' + FULL[st.draft.month],
-    customList, customCount: st.custom.length + ' ADDED', customEmpty: st.custom.length === 0,
+    customList, customCount: customArr.length + ' ADDED', customEmpty: customArr.length === 0,
     gdraft: st.gdraft,
     swatches: PALETTE.map((c) => ({ c, selected: st.gdraft.color === c, select: () => {} })),
     editRows: ALL.map((g, gi) => ({
-      k: g.k, name: g.name, color: g.color, dueIso: g.dueIso, targetText: goals[gi].target,
-      origin: g.custom ? 'ADDED' : 'ORIGINAL', showRemove: !!g.custom,
-      swatches: PALETTE.map((c) => ({ c, selected: g.color === c })),
+      k: g?.k, name: g?.name ?? '', color: g?.color, dueIso: g?.dueIso ?? '', targetText: goals[gi]?.target ?? '',
+      origin: g?.custom ? 'ADDED' : 'ORIGINAL', showRemove: !!g?.custom,
+      swatches: PALETTE.map((c) => ({ c, selected: g?.color === c })),
     })),
     filters, restoreShow: hiddenCount > 0, restoreLabel: 'RESTORE ' + hiddenCount + ' REMOVED',
     msRows: msRaw.map(rowify), msCount: msRaw.length + ' ITEMS',
     wkRows: wkRaw.map(rowify), wkCount: wkRaw.length + ' ITEMS',
     notes: st.notes,
     // todo board
-    columns, history, historyCount: st.archive.length + ' ARCHIVED', historyEmpty: st.archive.length === 0,
+    columns, history, historyCount: archiveArr.length + ' ARCHIVED', historyEmpty: archiveArr.length === 0,
     tdraft: st.tdraft,
     // calendar
     dow: DOW, calDays, calLabel: MONTH_NAMES[st.calM] + ' ' + st.calY,

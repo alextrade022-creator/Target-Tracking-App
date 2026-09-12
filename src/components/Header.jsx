@@ -7,6 +7,7 @@ const TABS = [
   { key: 'todo', label: 'Todo Board' },
   { key: 'cal', label: 'Calendar' },
   { key: 'notes', label: 'Notes & New Tasks' },
+  { key: 'branding', label: 'Personal Branding' },
   { key: 'report', label: 'Monthly Report' },
 ]
 

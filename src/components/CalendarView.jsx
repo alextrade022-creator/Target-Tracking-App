@@ -31,7 +31,7 @@ export default function CalendarView({ vals, actions }) {
         </div>
 
         <div className="grid grid-cols-7">
-          {calDays.map((d, i) => (
+          {(calDays ?? []).map((d, i) => (
             <div
               key={i}
               onClick={d.select}
@@ -45,7 +45,7 @@ export default function CalendarView({ vals, actions }) {
                 {d.num}
               </div>
               <div className="mt-1.5 flex flex-col gap-1">
-                {d.items.map((it, j) => (
+                {(d.items ?? []).map((it, j) => (
                   <div
                     key={j}
                     className={cn('overflow-hidden text-ellipsis whitespace-nowrap rounded px-1.5 py-[3px] text-[10.5px] leading-[1.3]', it.strike && 'line-through')}
@@ -89,7 +89,7 @@ export default function CalendarView({ vals, actions }) {
             <div className="mono text-[10.5px] tracking-[0.14em] text-mute2">SELECTED DAY</div>
           </div>
           <div className="flex flex-col gap-3 px-5 pb-5 pt-4">
-            {dayMeetings.map((m) => (
+            {(dayMeetings ?? []).map((m) => (
               <div key={m.id} className="rounded-[11px] border border-hair/[0.07] bg-hair/[0.04] px-3.5 py-[13px]">
                 <div className="flex items-start justify-between gap-2.5">
                   <div className={cn('text-[14px] font-semibold leading-[1.35]', m.strike && 'line-through')} style={{ textWrap: 'pretty' }}>
@@ -125,7 +125,7 @@ export default function CalendarView({ vals, actions }) {
             {vals.dayTodosShow && (
               <div className="flex flex-col gap-2 border-t border-hair/[0.07] pt-1.5">
                 <div className="mono mt-2 text-[10.5px] tracking-[0.14em] text-mute2">TODOS DUE TODAY</div>
-                {dayTodos.map((t, i) => (
+                {(dayTodos ?? []).map((t, i) => (
                   <div key={i} className="flex items-center justify-between gap-2.5 rounded-lg bg-hair/[0.035] px-3 py-2.5">
                     <div className="text-[13px] text-soft" style={{ textWrap: 'pretty' }}>{t.title}</div>
                     <div className="mono whitespace-nowrap text-[10px] tracking-[0.08em]" style={{ color: t.statusColor }}>{t.statusLabel}</div>
@@ -141,7 +141,7 @@ export default function CalendarView({ vals, actions }) {
           <div className="panel">
             <div className="border-b border-hair/[0.08] px-5 py-4 text-[17px] font-semibold">Upcoming meetings</div>
             <div className="flex flex-col gap-2.5 px-5 pb-[18px] pt-3.5">
-              {upcoming.map((u, i) => (
+              {(upcoming ?? []).map((u, i) => (
                 <div key={i} onClick={u.go} className="flex cursor-pointer items-center justify-between gap-3 rounded-lg bg-hair/[0.035] px-3 py-2.5">
                   <div>
                     <div className="text-[13.5px] text-soft" style={{ textWrap: 'pretty' }}>{u.title}</div>

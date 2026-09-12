@@ -5,6 +5,7 @@ import Dashboard from './components/Dashboard'
 import TodoBoard from './components/TodoBoard'
 import CalendarView from './components/CalendarView'
 import Notes from './components/Notes'
+import Branding from './components/Branding'
 import Report from './components/Report'
 
 export default function App() {
@@ -22,6 +23,7 @@ export default function App() {
       {vals.page === 'todo' && <TodoBoard vals={vals} actions={actions} />}
       {vals.page === 'cal' && <CalendarView vals={vals} actions={actions} />}
       {vals.page === 'notes' && <Notes vals={vals} actions={actions} />}
+      {vals.page === 'branding' && <Branding vals={vals} actions={actions} />}
       {vals.page === 'report' && <Report vals={vals} actions={actions} />}
     </div>
   )

@@ -45,7 +45,7 @@ export default function TodoBoard({ vals, actions }) {
 
       {/* Board */}
       <div className="mt-[22px] grid grid-cols-1 items-start gap-4 md:grid-cols-3">
-        {columns.map((col) => (
+        {(columns ?? []).map((col) => (
           <div key={col.label} className="min-h-[260px] rounded-2xl border border-hair/[0.08] bg-surface p-4">
             <div className="mb-3.5 flex items-center gap-2.5">
               <div className="mono rounded-md px-[11px] py-[5px] text-[11px] tracking-[0.14em]" style={{ color: col.color, background: col.tint }}>
@@ -54,7 +54,7 @@ export default function TodoBoard({ vals, actions }) {
               <div className="mono text-[15px]" style={{ color: col.color }}>{col.count}</div>
             </div>
             <div className="flex flex-col gap-2.5">
-              {col.cards.map((c) => (
+              {(col.cards ?? []).map((c) => (
                 <div key={c.id} className="rounded-xl border border-hair/[0.08] bg-card p-3.5" style={{ borderLeft: '3px solid ' + c.accent }}>
                   <div className="flex items-start justify-between gap-2.5">
                     <div
@@ -107,7 +107,7 @@ export default function TodoBoard({ vals, actions }) {
           <div className="mono text-[11px] tracking-[0.14em] text-mute2">{vals.historyCount}</div>
         </div>
         <div className="flex flex-col gap-2 overflow-x-auto px-[22px] pb-[22px] pt-3.5">
-          {history.map((h) => (
+          {(history ?? []).map((h) => (
             <div
               key={h.id}
               className="grid min-w-[680px] items-center gap-3.5 rounded-[10px] border border-hair/[0.07] bg-hair/[0.035] px-3.5 py-[11px]"

@@ -47,7 +47,7 @@ export default function Notes({ vals, actions }) {
           <div className="mono text-[11px] tracking-[0.14em] text-mute2">{vals.customCount}</div>
         </div>
         <div className="flex min-h-[120px] flex-col gap-2.5 px-[22px] pb-[22px] pt-3.5">
-          {customList.map((c) => (
+          {(customList ?? []).map((c) => (
             <div key={c.id} className="flex items-start gap-3 rounded-[10px] border border-hair/[0.07] bg-hair/[0.04] px-3.5 py-3">
               <div className="mt-0.5">
                 <TickBox item={c} size={15} onClick={c.toggle} />
@@ -112,7 +112,7 @@ export default function Notes({ vals, actions }) {
           EDIT EXISTING TARGETS
         </div>
         <div className="flex flex-col gap-2.5 overflow-x-auto px-[22px] pb-[22px]">
-          {editRows.map((g) => (
+          {(editRows ?? []).map((g) => (
             <div
               key={g.k}
               className="grid min-w-[720px] items-center gap-3 rounded-[10px] border border-hair/[0.07] bg-hair/[0.035] px-3.5 py-[11px]"
@@ -145,7 +145,7 @@ export default function Notes({ vals, actions }) {
       {/* Filter bar */}
       <div className="col-span-full flex flex-wrap items-center gap-2.5">
         <div className="mono text-[11px] tracking-[0.16em] text-mute2">FILTER</div>
-        {filters.map((f) => (
+        {(filters ?? []).map((f) => (
           <button
             key={f.value}
             type="button"
@@ -207,7 +207,7 @@ function ItemList({ title, count, rows, actions }) {
         <div className="mono text-[11px] tracking-[0.14em] text-mute2">{count}</div>
       </div>
       <div className="flex max-h-[620px] flex-col gap-2.5 overflow-auto px-[22px] pb-[22px] pt-3.5">
-        {rows.map((x) => (
+        {(rows ?? []).map((x) => (
           <div key={x.id} className="flex items-center gap-[11px] rounded-[10px] border border-hair/[0.07] bg-hair/[0.035] px-3 py-2.5">
             <TickBox item={x} size={15} onClick={x.toggle} />
             <div className="mono whitespace-nowrap rounded-md bg-hair/[0.06] px-[7px] py-1 text-[9.5px] tracking-[0.09em] text-mute3">{x.month}</div>

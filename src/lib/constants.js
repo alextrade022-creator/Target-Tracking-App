@@ -119,5 +119,18 @@ export const DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 // api/_lib/slices.js). Persistence itself lives server-side.
 export const SLICES = [
   'done', 'custom', 'notes', 'edits', 'hidden',
-  'todos', 'archive', 'meetings', 'goals', 'goalEdits',
+  'todos', 'archive', 'meetings', 'goals', 'goalEdits', 'branding',
+]
+
+// Personal-branding: production stages (in pipeline order) and target platforms.
+export const BRAND_STAGES = [
+  { k: 'shoot', label: 'Shoot', color: '#FF8A3D' },
+  { k: 'edit', label: 'Edit', color: '#F4D35E' },
+  { k: 'post', label: 'Post', color: '#7BC96F' },
+]
+
+export const PLATFORMS = [
+  { k: 'instagram', label: 'Instagram', color: '#E4A0FF' },
+  { k: 'youtube', label: 'YouTube', color: '#FF6B8A' },
+  { k: 'facebook', label: 'Facebook', color: '#5FA8FF' },
 ]

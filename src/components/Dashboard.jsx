@@ -8,7 +8,7 @@ export default function Dashboard({ vals, actions }) {
     <div>
       {/* Goal cards */}
       <div className="mt-7 grid gap-3.5" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))' }}>
-        {goals.map((g) => (
+        {(goals ?? []).map((g) => (
           <div key={g.k} className="stat relative overflow-hidden px-4 pb-3.5 pt-4">
             <div className="absolute bottom-0 left-0 top-0 w-[3px]" style={{ background: g.color }} />
             <div className="text-[17px] font-semibold tracking-[-0.01em]">{g.name}</div>
@@ -69,7 +69,7 @@ export default function Dashboard({ vals, actions }) {
         {/* Month header row */}
         <div className="grid border-b border-hair/[0.08] bg-hair/[0.02]" style={{ gridTemplateColumns: '212px repeat(7,1fr)' }}>
           <div className="mono px-[18px] py-3 text-[11px] tracking-[0.16em] text-mute2">TARGET</div>
-          {months.map((m, i) => (
+          {(months ?? []).map((m, i) => (
             <div
               key={i}
               onClick={m.select}
@@ -92,7 +92,7 @@ export default function Dashboard({ vals, actions }) {
         </div>
 
         {/* Goal rows */}
-        {goals.map((g) => (
+        {(goals ?? []).map((g) => (
           <div key={g.k} className="grid border-b border-hair/[0.06]" style={{ gridTemplateColumns: '212px repeat(7,1fr)' }}>
             <div className="flex items-start gap-2.5 px-[18px] py-3.5">
               <div className="mt-1.5 h-2 w-2 flex-none rounded-sm" style={{ background: g.color }} />
@@ -101,13 +101,13 @@ export default function Dashboard({ vals, actions }) {
                 <div className="mono mt-[3px] text-[10.5px] text-mute2">{g.short}</div>
               </div>
             </div>
-            {g.cells.map((cell, ci) => (
+            {(g.cells ?? []).map((cell, ci) => (
               <div
                 key={ci}
                 className="flex min-h-[74px] flex-col gap-1.5 border-l border-hair/[0.06] p-[9px]"
                 style={{ background: cell.current ? 'rgba(244,211,94,.055)' : 'transparent' }}
               >
-                {cell.ms.map((ms) => (
+                {(cell.ms ?? []).map((ms) => (
                   <div
                     key={ms.id}
                     onClick={ms.toggle}
@@ -145,7 +145,7 @@ export default function Dashboard({ vals, actions }) {
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
-            {weeks.map((w, wi) => (
+            {(weeks ?? []).map((w, wi) => (
               <div key={wi} className="border-t border-hair/[0.06] px-4 pb-5 pt-4 sm:border-l xl:border-t-0">
                 <div className="flex items-baseline justify-between">
                   <div className="mono text-[12px] tracking-[0.14em] text-mute3">{w.label}</div>
@@ -153,7 +153,7 @@ export default function Dashboard({ vals, actions }) {
                 </div>
                 <Bar className="my-[9px]" pct={w.pct} color="#7BC96F" height={3} />
                 <div className="flex flex-col gap-2">
-                  {w.tasks.map((t) => (
+                  {(w.tasks ?? []).map((t) => (
                     <div key={t.id} onClick={t.toggle} className="flex cursor-pointer items-start gap-2">
                       <TickBox item={t} size={14} />
                       <div

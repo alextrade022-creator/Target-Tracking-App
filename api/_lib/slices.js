@@ -24,6 +24,7 @@ export const DEFAULTS = Object.freeze({
   meetings: [], // calendar meetings
   goals: [], // custom targets (xgoals in the hook)
   goalEdits: {}, // map: goal key -> patch (gedits in the hook)
+  branding: [], // personal-branding content pieces
 })
 
 export const SLICE_KEYS = Object.keys(DEFAULTS)

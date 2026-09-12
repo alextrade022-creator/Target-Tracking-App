@@ -7,7 +7,7 @@
 
 export const SLICE_KEYS = [
   'done', 'custom', 'notes', 'edits', 'hidden',
-  'todos', 'archive', 'meetings', 'goals', 'goalEdits',
+  'todos', 'archive', 'meetings', 'goals', 'goalEdits', 'branding',
 ]
 
 const WRITE_DELAY = 400 // ms

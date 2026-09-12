@@ -46,7 +46,7 @@ export default function Report({ vals, actions }) {
         <div className="overflow-x-auto">
         <div className="grid min-w-[540px]" style={{ gridTemplateColumns: '1.4fr 1.6fr .9fr .6fr .8fr' }}>
           <Th>TARGET</Th><Th>GOAL</Th><Th>DEADLINE</Th><Th>DONE</Th><Th last>STATUS</Th>
-          {vals.repGoals.map((r, i) => (
+          {(vals.repGoals ?? []).map((r, i) => (
             <div key={i} className="contents">
               <Td className="text-[13.5px] font-semibold">{r.name}</Td>
               <Td className="text-[13px] text-[#4A5866]">{r.target}</Td>
@@ -65,7 +65,7 @@ export default function Report({ vals, actions }) {
           <div>
             <div className="border-b border-[#DCE2E8] pb-2 text-[19px] font-bold">Completed in {vals.repMonthShort}</div>
             <div className="mt-3 flex flex-col gap-[7px]">
-              {vals.repDone.map((i, k) => (
+              {(vals.repDone ?? []).map((i, k) => (
                 <ReportLine key={k} marker="✓" markerClass="text-[#2E9E5B] font-bold" item={i} />
               ))}
               {vals.repDoneEmpty && <div className="text-[13px] text-[#8892A0]">Nothing ticked off yet this month.</div>}
@@ -74,7 +74,7 @@ export default function Report({ vals, actions }) {
           <div>
             <div className="border-b border-[#DCE2E8] pb-2 text-[19px] font-bold">Still pending in {vals.repMonthShort}</div>
             <div className="mt-3 flex flex-col gap-[7px]">
-              {vals.repPending.map((i, k) => (
+              {(vals.repPending ?? []).map((i, k) => (
                 <ReportLine key={k} marker="•" markerClass="text-[#C46A1B] font-bold" item={i} />
               ))}
               {vals.repPendingEmpty && <div className="text-[13px] text-[#8892A0]">All clear — nothing pending this month.</div>}
@@ -87,7 +87,7 @@ export default function Report({ vals, actions }) {
         <div className="overflow-x-auto">
         <div className="grid min-w-[540px]" style={{ gridTemplateColumns: '1fr 150px 120px 120px' }}>
           <Th>TASK</Th><Th>ASSIGNED TO</Th><Th>DEADLINE</Th><Th last>STATUS</Th>
-          {vals.repTodos.map((t, i) => (
+          {(vals.repTodos ?? []).map((t, i) => (
             <div key={i} className="contents">
               <Td className="text-[13px]" style={{ textWrap: 'pretty' }}>{t.title}</Td>
               <Td className="text-[12.5px] text-[#4A5866]">{t.who}</Td>
