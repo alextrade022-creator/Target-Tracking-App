@@ -119,7 +119,7 @@ export const DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 // api/_lib/slices.js). Persistence itself lives server-side.
 export const SLICES = [
   'done', 'custom', 'notes', 'edits', 'hidden',
-  'todos', 'archive', 'meetings', 'goals', 'goalEdits', 'branding',
+  'todos', 'archive', 'meetings', 'goals', 'goalEdits', 'branding', 'brandTags',
 ]
 
 // Personal-branding: production stages (in pipeline order) and target platforms.

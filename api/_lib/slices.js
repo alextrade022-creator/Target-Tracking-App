@@ -25,6 +25,7 @@ export const DEFAULTS = Object.freeze({
   goals: [], // custom targets (xgoals in the hook)
   goalEdits: {}, // map: goal key -> patch (gedits in the hook)
   branding: [], // personal-branding content pieces
+  brandTags: [], // reusable topic tags (name + color) for branding content
 })
 
 export const SLICE_KEYS = Object.keys(DEFAULTS)

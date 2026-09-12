@@ -33,11 +33,13 @@ const initialState = () => ({
   xgoals: [],
   gedits: {},
   branding: [],
+  brandTags: [],
   gdraft: { name: '', target: '', due: '2027-03-31', color: '#5FA8FF' },
   draft: { goal: 'edudot', month: NOW, week: 'ms', text: '' },
   tdraft: { title: '', who: '', from: iso(new Date()), due: '', details: '' },
   mdraft: { title: '', who: '', date: '2026-09-02', time: '10:00', notes: '' },
   bdraft: { hook: '', body: '', cta: '' },
+  tagDraft: { name: '', color: PALETTE[0] },
 })
 
 /* helper: milestone map for a goal, scaled for the student-band goal */
@@ -79,6 +81,7 @@ export function useTargetTracker() {
           xgoals: data.goals ?? [],
           gedits: data.goalEdits ?? {},
           branding: data.branding ?? [],
+          brandTags: data.brandTags ?? [],
         })
       }
       hydrated.current = true
@@ -103,6 +106,7 @@ export function useTargetTracker() {
   useEffect(() => persist('goals', state.xgoals), [state.xgoals, persist])
   useEffect(() => persist('goalEdits', state.gedits), [state.gedits, persist])
   useEffect(() => persist('branding', state.branding), [state.branding, persist])
+  useEffect(() => persist('brandTags', state.brandTags), [state.brandTags, persist])
 
   /* ---- print handling ---- */
   useEffect(() => {
@@ -142,7 +146,7 @@ export function useTargetTracker() {
       const item = {
         id: 'b' + Date.now(), hook, body, cta,
         shoot: false, edit: false, post: false,
-        platforms: [], postedDate: '', createdAt: Date.now(),
+        platforms: [], tags: [], postedDate: '', createdAt: Date.now(),
       }
       return { branding: (s.branding || []).concat([item]), bdraft: { hook: '', body: '', cta: '' } }
     })
@@ -171,6 +175,45 @@ export function useTargetTracker() {
 
   const setBrandingDate = useCallback((id, date) => patchBranding(id, { postedDate: date }), [patchBranding])
   const removeBranding = useCallback((id) => update((s) => ({ branding: (s.branding || []).filter((b) => b.id !== id) })), [update])
+
+  /* ---- branding tags (a reusable, editable tag library) ---- */
+  const setTagDraft = useCallback((patch) => update((s) => ({ tagDraft: { ...s.tagDraft, ...patch } })), [update])
+
+  const addBrandTag = useCallback(() => {
+    update((s) => {
+      const d = s.tagDraft || {}
+      const name = (d.name || '').trim()
+      if (!name) return {}
+      const tag = { id: 'tag' + Date.now(), name, color: d.color || PALETTE[0] }
+      return { brandTags: (s.brandTags || []).concat([tag]), tagDraft: { name: '', color: d.color || PALETTE[0] } }
+    })
+  }, [update])
+
+  const editBrandTag = useCallback((id, patch) => {
+    update((s) => ({ brandTags: (s.brandTags || []).map((t) => (t.id === id ? { ...t, ...patch } : t)) }))
+  }, [update])
+
+  const removeBrandTag = useCallback((id) => {
+    update((s) => ({
+      brandTags: (s.brandTags || []).filter((t) => t.id !== id),
+      // also drop the tag from every content piece that used it
+      branding: (s.branding || []).map((b) => ({
+        ...b,
+        tags: (Array.isArray(b.tags) ? b.tags : []).filter((tid) => tid !== id),
+      })),
+    }))
+  }, [update])
+
+  const toggleBrandingTag = useCallback((contentId, tagId) => {
+    update((s) => ({
+      branding: (s.branding || []).map((b) => {
+        if (b.id !== contentId) return b
+        const cur = Array.isArray(b.tags) ? b.tags : []
+        const tags = cur.includes(tagId) ? cur.filter((t) => t !== tagId) : cur.concat([tagId])
+        return { ...b, tags }
+      }),
+    }))
+  }, [update])
 
   const addTask = useCallback(() => {
     update((s) => {
@@ -296,11 +339,12 @@ export function useTargetTracker() {
   const setCal = useCallback((patch) => update(patch), [update])
 
   /* --------------------- derived view values --------------------- */
-  const vals = useMemo(() => computeVals(state, { toggle, editText, hideItem, moveTodo, archiveTodo, removeTodo, removeTask, restoreArchived, dropArchived, patchMeeting, removeMeeting, editGoal, removeGoal, setSel, setFilter, selectDay, setM, setCal, toggleBrandingStage, toggleBrandingPlatform, setBrandingDate, removeBranding, patchBranding }), [
+  const vals = useMemo(() => computeVals(state, { toggle, editText, hideItem, moveTodo, archiveTodo, removeTodo, removeTask, restoreArchived, dropArchived, patchMeeting, removeMeeting, editGoal, removeGoal, setSel, setFilter, selectDay, setM, setCal, toggleBrandingStage, toggleBrandingPlatform, setBrandingDate, removeBranding, patchBranding, toggleBrandingTag, editBrandTag, removeBrandTag }), [
     state, toggle, editText, hideItem, moveTodo, archiveTodo, removeTodo, removeTask,
     restoreArchived, dropArchived, patchMeeting, removeMeeting, editGoal, removeGoal,
     setSel, setFilter, selectDay, setM, setCal,
     toggleBrandingStage, toggleBrandingPlatform, setBrandingDate, removeBranding, patchBranding,
+    toggleBrandingTag, editBrandTag, removeBrandTag,
   ])
 
   return {
@@ -313,6 +357,7 @@ export function useTargetTracker() {
       resetProgress, exportPdf, goPage, setSel, setFilter, setRepMonth, restoreAll,
       setB, addBranding, patchBranding, toggleBrandingStage, toggleBrandingPlatform,
       setBrandingDate, removeBranding,
+      setTagDraft, addBrandTag, editBrandTag, removeBrandTag, toggleBrandingTag,
     },
   }
 }
@@ -339,6 +384,7 @@ function computeVals(st, a) {
   const meetingsArr = Array.isArray(st.meetings) ? st.meetings : []
   const xgoalsArr = Array.isArray(st.xgoals) ? st.xgoals : []
   const brandingArr = Array.isArray(st.branding) ? st.branding : []
+  const brandTagsArr = Array.isArray(st.brandTags) ? st.brandTags : []
 
   const sel = st.sel
   const target = CONFIG.targetStudents ?? 160
@@ -670,6 +716,7 @@ function computeVals(st, a) {
       const edit = !!b?.edit
       const post = !!b?.post
       const platforms = Array.isArray(b?.platforms) ? b.platforms : []
+      const tagIds = Array.isArray(b?.tags) ? b.tags : []
       const stageDone = (shoot ? 1 : 0) + (edit ? 1 : 0) + (post ? 1 : 0)
       const complete = shoot && edit && post
       return {
@@ -689,6 +736,16 @@ function computeVals(st, a) {
           k: p.k, label: p.label, color: p.color, on: platforms.includes(p.k),
           toggle: () => a.toggleBrandingPlatform(b?.id, p.k),
         })),
+        // every library tag as a toggle (on = assigned to this content)
+        tagChips: brandTagsArr.map((t) => ({
+          id: t?.id, name: na(t?.name), color: t?.color || '#4ECDC4', on: tagIds.includes(t?.id),
+          toggle: () => a.toggleBrandingTag(b?.id, t?.id),
+        })),
+        // just the assigned tags, for an at-a-glance read
+        assignedTags: tagIds
+          .map((id) => brandTagsArr.find((t) => t?.id === id))
+          .filter(Boolean)
+          .map((t) => ({ id: t?.id, name: na(t?.name), color: t?.color || '#4ECDC4' })),
         postedDate: b?.postedDate || '',
         postedLabel: b?.postedDate ? pretty(b.postedDate) : 'N/A',
         setDate: (e) => a.setBrandingDate(b?.id, e.target.value),
@@ -702,12 +759,21 @@ function computeVals(st, a) {
     post: brandingArr.filter((b) => b?.post).length,
     complete: brandingArr.filter((b) => b?.shoot && b?.edit && b?.post).length,
   }
+  // Tag library (for the manage-tags panel): raw name for editing, plus callbacks.
+  const brandTags = brandTagsArr.map((t) => ({
+    id: t?.id,
+    name: t?.name ?? '',
+    color: t?.color || '#4ECDC4',
+    edit: (patch) => a.editBrandTag(t?.id, patch),
+    remove: () => a.removeBrandTag(t?.id),
+  }))
 
   const page = st.printing ? 'report' : st.page
   const hiddenCount = Object.keys(hiddenMap).length
 
   return {
     branding, brandingStats, bdraft: st.bdraft,
+    brandTags, tagDraft: st.tagDraft,
     ownerName: CONFIG.ownerName ?? 'My Targets & Growth Plan',
     showWeekly: CONFIG.showWeeklyPlan ?? true,
     page,
