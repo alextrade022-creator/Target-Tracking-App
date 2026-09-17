@@ -19,7 +19,7 @@ export default function Branding({ vals, actions }) {
       {/* Content writer */}
       <div className="panel mt-[22px]">
         <div className="border-b border-hair/[0.08] px-[22px] py-[18px]">
-          <div className="text-[19px] font-semibold tracking-[-0.01em]">Write new content</div>
+          <div className="text-[19px] font-head font-semibold tracking-[-0.01em]">Write new content</div>
           <div className="mt-1 text-[13px] text-mute">
             Draft the three parts of your post. Adding it drops a new content card below and bumps your total.
           </div>
@@ -39,7 +39,7 @@ export default function Branding({ vals, actions }) {
       {/* Tag library */}
       <div className="panel mt-[22px]">
         <div className="border-b border-hair/[0.08] px-[22px] py-[18px]">
-          <div className="text-[19px] font-semibold tracking-[-0.01em]">Content tags</div>
+          <div className="text-[19px] font-head font-semibold tracking-[-0.01em]">Content tags</div>
           <div className="mt-1 text-[13px] text-mute">
             Reusable topic tags (like bookmarks). Give each a name and colour — they show on every content so you can
             tell at a glance what the reel is about.

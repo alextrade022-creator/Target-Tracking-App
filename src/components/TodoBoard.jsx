@@ -9,7 +9,7 @@ export default function TodoBoard({ vals, actions }) {
       {/* New todo */}
       <div className="panel mt-7">
         <div className="border-b border-hair/[0.08] px-[22px] py-[18px]">
-          <div className="text-[19px] font-semibold tracking-[-0.01em]">New todo</div>
+          <div className="text-[19px] font-head font-semibold tracking-[-0.01em]">New todo</div>
           <div className="mt-1 text-[13px] text-mute">
             Anything ad-hoc that isn't part of the roadmap — assign it, date it, and move it across the board.
           </div>
@@ -103,7 +103,7 @@ export default function TodoBoard({ vals, actions }) {
       {/* History */}
       <div className="panel mt-[22px]">
         <div className="flex items-center justify-between border-b border-hair/[0.08] px-[22px] py-[18px]">
-          <div className="text-[19px] font-semibold tracking-[-0.01em]">History — completed &amp; archived</div>
+          <div className="text-[19px] font-head font-semibold tracking-[-0.01em]">History — completed &amp; archived</div>
           <div className="mono text-[11px] tracking-[0.14em] text-mute2">{vals.historyCount}</div>
         </div>
         <div className="flex flex-col gap-2 overflow-x-auto px-[22px] pb-[22px] pt-3.5">

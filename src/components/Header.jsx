@@ -8,6 +8,7 @@ const TABS = [
   { key: 'cal', label: 'Calendar' },
   { key: 'notes', label: 'Notes & New Tasks' },
   { key: 'branding', label: 'Personal Branding' },
+  { key: 'leads', label: 'Lead Pipeline' },
   { key: 'report', label: 'Monthly Report' },
 ]
 
@@ -48,7 +49,7 @@ export default function Header({ vals, goPage, theme, toggleTheme }) {
 
       <div className="mt-2 flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
         <div className="min-w-0 flex-1">
-          <div className="text-[32px] font-bold leading-[1.08] tracking-[-0.03em] sm:text-[40px] xl:text-[46px]">
+          <div className="font-head text-[32px] font-bold leading-[1.08] tracking-[-0.03em] sm:text-[40px] xl:text-[46px]">
             {vals.ownerName}
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
@@ -74,7 +75,7 @@ export default function Header({ vals, goPage, theme, toggleTheme }) {
               <div className="text-[13px] text-mute2">of {vals.totalCount} milestones</div>
             </div>
             <div className="mt-2">
-              <Bar pct={vals.pct} color="linear-gradient(90deg,#4ECDC4,#7BC96F)" height={6} />
+              <Bar pct={vals.pct} color="linear-gradient(90deg,#0EA572,#7BC96F)" height={6} />
             </div>
           </div>
         </div>

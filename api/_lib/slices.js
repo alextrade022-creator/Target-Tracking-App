@@ -26,6 +26,7 @@ export const DEFAULTS = Object.freeze({
   goalEdits: {}, // map: goal key -> patch (gedits in the hook)
   branding: [], // personal-branding content pieces
   brandTags: [], // reusable topic tags (name + color) for branding content
+  leads: [], // lead-pipeline / CRM records
 })
 
 export const SLICE_KEYS = Object.keys(DEFAULTS)

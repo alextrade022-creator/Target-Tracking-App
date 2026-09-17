@@ -6,7 +6,8 @@ Refactored from the original single-file Claude Design document into **React + V
 
 ## Features
 
-- **Light & dark themes** with a toggle in the top-right of the header. The choice is saved to `localStorage` and applied before first paint (no flash). The theme is driven by CSS variables, so every surface, text and hairline flips consistently; accent colors stay constant.
+- **Green brand theme** — accent `#0EA572`, deep base `#0B2E24`, text `#1C1C1E`, page `#F6F7F5`, supporting tint `#BFE3D2`. Fonts: **Poppins** (headings), **Satoshi** (body/UI), **Montserrat** (labels/uppercase/numbers).
+- **Light & dark themes** with a toggle in the top-right of the header (light is the default; dark is a deep-green variant). The choice is saved to `localStorage` and applied before first paint (no flash). The theme is driven by CSS variables, so every surface, text and hairline flips consistently; the brand accent stays constant.
 - **Responsive** from phone to wide desktop. Wide tables (the monthly roadmap, the calendar grid, the target editor, the report tables) scroll horizontally on small screens; multi-column sections collapse to fewer columns.
 
 ## Tech stack

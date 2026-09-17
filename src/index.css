@@ -3,46 +3,49 @@
 @tailwind utilities;
 
 /* =====================================================================
-   Theme palettes. :root is the dark default; [data-theme="light"] flips
-   the neutrals. Accents are defined per-component and stay constant.
+   Theme palettes. Light (green) is the default; [data-theme="dark"] is a
+   deep-green variant. Palette:
+     accent #0EA572 · deep base #0B2E24 · text #1C1C1E · bg #F6F7F5 · tint #BFE3D2
    ===================================================================== */
 :root,
-:root[data-theme='dark'] {
-  color-scheme: dark;
-  --bg: #0a0e14;
-  --panel: #111823;
-  --surface: #0f151e;
-  --card: #131a24;
-  --fg: #e8edf3;
-  --soft: #d8e1ea;
-  --mute: #8798aa;
-  --mute2: #5e7183;
-  --mute3: #a9b7c6;
-  --slate: #7c8b9e;
-  --hair-rgb: 255 255 255; /* hairline borders + subtle overlays */
-  --box-border: #4a5a6b; /* empty tick box outline */
-  --tick-done: #66798c; /* completed (struck-through) text */
-  --cal-out: #3c4855; /* out-of-month calendar day number */
-  --ring: #e8edf3; /* selected colour-swatch ring */
-}
-
 :root[data-theme='light'] {
   color-scheme: light;
-  --bg: #f4f6f9;
+  --bg: #f6f7f5; /* neutral light — page background */
   --panel: #ffffff;
   --surface: #ffffff;
   --card: #ffffff;
-  --fg: #16202b;
-  --soft: #26323f;
-  --mute: #5a6b7c;
-  --mute2: #8492a0;
-  --mute3: #3d4b59;
-  --slate: #647382;
-  --hair-rgb: 22 32 43; /* dark hairlines on light surfaces */
-  --box-border: #b3c0cc;
-  --tick-done: #9aa7b4;
-  --cal-out: #b9c4cf;
-  --ring: #16202b;
+  --fg: #1c1c1e; /* neutral dark — body text */
+  --soft: #22322b; /* strong secondary text (green-tinted) */
+  --mute: #57685f;
+  --mute2: #8a968e;
+  --mute3: #3a4a42;
+  --slate: #66756c;
+  --hair-rgb: 11 46 36; /* deep-base green hairlines on light surfaces */
+  --box-border: #a9c6b9;
+  --tick-done: #8ba393;
+  --cal-out: #b8c8be;
+  --ring: #1c1c1e;
+  --tint: #bfe3d2; /* supporting tint — soft backgrounds, tags, hover */
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0b2e24; /* deep base — dark sections */
+  --panel: #103a2d;
+  --surface: #0e3428;
+  --card: #134838;
+  --fg: #f6f7f5;
+  --soft: #d8e7df;
+  --mute: #8da89b;
+  --mute2: #5e7a6d;
+  --mute3: #b6cbc0;
+  --slate: #7b948a;
+  --hair-rgb: 255 255 255; /* light hairlines on deep green */
+  --box-border: #3e6455;
+  --tick-done: #6f8a7d;
+  --cal-out: #3a5a4d;
+  --ring: #f6f7f5;
+  --tint: #123c2d; /* dark supporting tint */
 }
 
 @layer base {

@@ -5,8 +5,10 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"Space Grotesk"', 'system-ui', 'sans-serif'],
-        mono: ['"IBM Plex Mono"', 'ui-monospace', 'monospace'],
+        // Satoshi = body/UI, Montserrat = labels/numbers/uppercase, Poppins = headings.
+        sans: ['Satoshi', 'system-ui', 'sans-serif'],
+        mono: ['Montserrat', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        head: ['Poppins', 'system-ui', 'sans-serif'],
       },
       colors: {
         // Theme-aware neutrals — resolved from CSS variables so they flip
@@ -23,11 +25,13 @@ export default {
         slate: 'var(--slate)',
         // Hairline borders / subtle overlays; alpha applied per-use, e.g. hair/10.
         hair: 'rgb(var(--hair-rgb) / <alpha-value>)',
-        // Always-dark text placed on a bright accent (buttons, chips, ticks).
-        onaccent: '#0A0E14',
-        // Accents — identical in both themes.
-        teal: '#4ECDC4',
-        'teal-lt': '#7FE3DC',
+        // Supporting tint — soft backgrounds, tags, hover states (theme-aware).
+        tint: 'var(--tint)',
+        // Text placed on the bright accent (buttons, chips, ticks) — dark green for contrast.
+        onaccent: '#06231B',
+        // Primary brand accent (green) — buttons, links, highlights. Same in both themes.
+        teal: '#0EA572',
+        'teal-lt': '#34C892',
         orange: '#FF8A3D',
         purple: '#A78BFA',
         yellow: '#F4D35E',

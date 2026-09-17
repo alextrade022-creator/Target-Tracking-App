@@ -9,9 +9,9 @@ function initialTheme() {
   } catch (e) {
     /* ignore */
   }
-  // Fall back to whatever the no-flash script already put on <html>, else dark.
+  // Fall back to whatever the no-flash script already put on <html>, else light.
   const attr = typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme')
-  return attr === 'light' ? 'light' : 'dark'
+  return attr === 'dark' ? 'dark' : 'light'
 }
 
 export function useTheme() {

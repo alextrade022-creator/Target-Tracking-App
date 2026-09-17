@@ -11,7 +11,7 @@ export default function CalendarView({ vals, actions }) {
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-hair/[0.08] px-5 py-4">
           <div className="flex items-center gap-3">
             <NavBtn onClick={() => actions.shiftMonth(-1)}>‹</NavBtn>
-            <div className="min-w-[190px] text-center text-[20px] font-semibold tracking-[-0.01em]">{vals.calLabel}</div>
+            <div className="min-w-[190px] text-center text-[20px] font-head font-semibold tracking-[-0.01em]">{vals.calLabel}</div>
             <NavBtn onClick={() => actions.shiftMonth(1)}>›</NavBtn>
           </div>
           <div className="flex flex-wrap items-center gap-4">
@@ -67,7 +67,7 @@ export default function CalendarView({ vals, actions }) {
       <div className="flex flex-col gap-[22px]">
         {/* Schedule a meeting */}
         <div className="panel">
-          <div className="border-b border-hair/[0.08] px-5 py-4 text-[17px] font-semibold">Schedule a meeting</div>
+          <div className="border-b border-hair/[0.08] px-5 py-4 font-head text-[17px] font-semibold">Schedule a meeting</div>
           <div className="flex flex-col gap-3 px-5 py-[18px]">
             <input className="field" value={mdraft.title} placeholder="Meeting title" onChange={(e) => setM({ title: e.target.value })} />
             <input className="field" value={mdraft.who} placeholder="With whom" onChange={(e) => setM({ who: e.target.value })} />
@@ -85,7 +85,7 @@ export default function CalendarView({ vals, actions }) {
         {/* Selected day */}
         <div className="panel">
           <div className="flex items-baseline justify-between border-b border-hair/[0.08] px-5 py-4">
-            <div className="text-[17px] font-semibold">{vals.selDayLabel}</div>
+            <div className="font-head text-[17px] font-semibold">{vals.selDayLabel}</div>
             <div className="mono text-[10.5px] tracking-[0.14em] text-mute2">SELECTED DAY</div>
           </div>
           <div className="flex flex-col gap-3 px-5 pb-5 pt-4">
@@ -139,7 +139,7 @@ export default function CalendarView({ vals, actions }) {
         {/* Upcoming */}
         {vals.upcomingShow && (
           <div className="panel">
-            <div className="border-b border-hair/[0.08] px-5 py-4 text-[17px] font-semibold">Upcoming meetings</div>
+            <div className="border-b border-hair/[0.08] px-5 py-4 font-head text-[17px] font-semibold">Upcoming meetings</div>
             <div className="flex flex-col gap-2.5 px-5 pb-[18px] pt-3.5">
               {(upcoming ?? []).map((u, i) => (
                 <div key={i} onClick={u.go} className="flex cursor-pointer items-center justify-between gap-3 rounded-lg bg-hair/[0.035] px-3 py-2.5">

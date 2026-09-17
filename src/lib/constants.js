@@ -28,7 +28,7 @@ export const GOALS = [
     ms: { 0: ['Shortlist 3 locations', 'Branch 1 — open'], 1: ['Branch 2 — open'], 2: ['Branch 3 — open'], 3: ['Branch 4 — open', 'Branch 5 — open · 5/5'] },
   },
   {
-    k: 'qissa', name: 'Qissa Learning', short: '120–200 STUDENTS', target: '120–200 students enrolled', due: '31 Mar 2027', color: '#4ECDC4',
+    k: 'qissa', name: 'Qissa Learning', short: '120–200 STUDENTS', target: '120–200 students enrolled', due: '31 Mar 2027', color: '#0EA572',
     steps: [10, 15, 20, 25, 25, 30, 35],
   },
   {
@@ -105,7 +105,7 @@ export const DUE_ISO = {
   mentorway: '2027-03-31', school: '2027-01-31', newops: '2027-03-31',
 }
 
-export const PALETTE = ['#4ECDC4', '#FF8A3D', '#A78BFA', '#F4D35E', '#7BC96F', '#FF6B8A', '#5FA8FF', '#E4A0FF']
+export const PALETTE = ['#0EA572', '#FF8A3D', '#A78BFA', '#F4D35E', '#7BC96F', '#FF6B8A', '#5FA8FF', '#E4A0FF']
 
 export const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -119,8 +119,42 @@ export const DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 // api/_lib/slices.js). Persistence itself lives server-side.
 export const SLICES = [
   'done', 'custom', 'notes', 'edits', 'hidden',
-  'todos', 'archive', 'meetings', 'goals', 'goalEdits', 'branding', 'brandTags',
+  'todos', 'archive', 'meetings', 'goals', 'goalEdits', 'branding', 'brandTags', 'leads',
 ]
+
+// Lead pipeline: consultation departments (type of lead), shown as coloured chips.
+// Adjust these labels/colours to your actual services.
+export const DEPARTMENTS = [
+  { k: 'financial', label: 'Financial Consultation', color: '#0EA572' },
+  { k: 'marketing', label: 'Marketing Consulting', color: '#FF8A3D' },
+  { k: 'business', label: 'Business Strategy', color: '#A78BFA' },
+  { k: 'branding', label: 'Branding', color: '#E4A0FF' },
+  { k: 'other', label: 'Other', color: '#8798AA' },
+]
+
+// Pipeline stages in order. `subs` are the sub-statuses a lead can carry while in
+// that stage (empty = no sub-status for that stage).
+export const LEAD_STAGES = [
+  { k: 'lead', label: 'Lead', color: '#8798AA', subs: [] },
+  {
+    k: 'contacted', label: 'Contacted', color: '#5FA8FF',
+    subs: ['Qualified', 'Not Qualified', 'Not Connected', 'Not Inquiry / Wrong Number', 'Enquiry for other service'],
+  },
+  {
+    k: 'active', label: 'Active Discussion', color: '#A78BFA',
+    subs: ['Requirement Identified', 'Follow-up Scheduled', 'Meeting Scheduled'],
+  },
+  { k: 'meeting_sch', label: 'Meeting Scheduled', color: '#F4D35E', subs: [] },
+  { k: 'meeting_done', label: 'Meeting Done', color: '#FF8A3D', subs: [] },
+  { k: 'proposal', label: 'Proposal Shared', color: '#34C892', subs: [] },
+  {
+    k: 'final', label: 'Final Deal', color: '#7BC96F',
+    subs: ['Closed Won', 'Proposal Under Review', 'Pending Payment Issue', 'Lost - Invalid Prospect'],
+  },
+]
+
+// Flattened unique sub-statuses (for the "sub-note wise" filter).
+export const LEAD_SUBS = [...new Set(LEAD_STAGES.flatMap((s) => s.subs))]
 
 // Personal-branding: production stages (in pipeline order) and target platforms.
 export const BRAND_STAGES = [

@@ -67,7 +67,7 @@ export function Bar({ pct, color, track = 'rgb(var(--hair-rgb) / .09)', height =
     <div className={cn('overflow-hidden rounded', className)} style={{ height, background: track }}>
       <div
         className="h-full rounded"
-        style={{ width: (pct || 0) + '%', background: color || '#4ECDC4' }}
+        style={{ width: (pct || 0) + '%', background: color || '#0EA572' }}
       />
     </div>
   )

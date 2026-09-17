@@ -24,7 +24,7 @@ export default function Report({ vals, actions }) {
         <div className="flex items-start justify-between border-b-2 border-[#16202B] pb-[18px]">
           <div>
             <div className="mono text-[11px] tracking-[0.2em] text-[#6B7885]">MONTHLY PROGRESS REPORT</div>
-            <div className="mt-2 text-[34px] font-bold leading-[1.15] tracking-[-0.02em]">{vals.repMonthLabel}</div>
+            <div className="mt-2 font-head text-[34px] font-bold leading-[1.15] tracking-[-0.02em]">{vals.repMonthLabel}</div>
             <div className="mt-1.5 text-[14px] text-[#5C6B7B]">{vals.ownerName} · targets Sep 2026 → Mar 2027</div>
           </div>
           <div className="text-right">
@@ -63,7 +63,7 @@ export default function Report({ vals, actions }) {
         {/* Completed / pending */}
         <div className="mt-[34px] grid grid-cols-1 gap-[26px] sm:grid-cols-2">
           <div>
-            <div className="border-b border-[#DCE2E8] pb-2 text-[19px] font-bold">Completed in {vals.repMonthShort}</div>
+            <div className="border-b border-[#DCE2E8] pb-2 font-head text-[19px] font-bold">Completed in {vals.repMonthShort}</div>
             <div className="mt-3 flex flex-col gap-[7px]">
               {(vals.repDone ?? []).map((i, k) => (
                 <ReportLine key={k} marker="✓" markerClass="text-[#2E9E5B] font-bold" item={i} />
@@ -72,7 +72,7 @@ export default function Report({ vals, actions }) {
             </div>
           </div>
           <div>
-            <div className="border-b border-[#DCE2E8] pb-2 text-[19px] font-bold">Still pending in {vals.repMonthShort}</div>
+            <div className="border-b border-[#DCE2E8] pb-2 font-head text-[19px] font-bold">Still pending in {vals.repMonthShort}</div>
             <div className="mt-3 flex flex-col gap-[7px]">
               {(vals.repPending ?? []).map((i, k) => (
                 <ReportLine key={k} marker="•" markerClass="text-[#C46A1B] font-bold" item={i} />
@@ -121,7 +121,7 @@ function StatBox({ label, value, sub }) {
 }
 
 function SectionTitle({ children }) {
-  return <div className="mt-[34px] border-b border-[#DCE2E8] pb-2 text-[19px] font-bold">{children}</div>
+  return <div className="mt-[34px] border-b border-[#DCE2E8] pb-2 font-head text-[19px] font-bold">{children}</div>
 }
 
 function Th({ children, last }) {

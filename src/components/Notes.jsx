@@ -10,7 +10,7 @@ export default function Notes({ vals, actions }) {
       {/* Add a new task */}
       <div className="panel">
         <div className="border-b border-hair/[0.08] px-[22px] py-[18px]">
-          <div className="text-[19px] font-semibold tracking-[-0.01em]">Add a new task</div>
+          <div className="text-[19px] font-head font-semibold tracking-[-0.01em]">Add a new task</div>
           <div className="mt-1 text-[13px] text-mute">
             Pick the company and the month. Choose a week to make it a weekly action, or leave it as a monthly milestone —
             either way it lands on the dashboard straight away.
@@ -43,7 +43,7 @@ export default function Notes({ vals, actions }) {
       {/* Tasks you added */}
       <div className="panel">
         <div className="flex items-center justify-between border-b border-hair/[0.08] px-[22px] py-[18px]">
-          <div className="text-[19px] font-semibold tracking-[-0.01em]">Tasks you added</div>
+          <div className="text-[19px] font-head font-semibold tracking-[-0.01em]">Tasks you added</div>
           <div className="mono text-[11px] tracking-[0.14em] text-mute2">{vals.customCount}</div>
         </div>
         <div className="flex min-h-[120px] flex-col gap-2.5 px-[22px] pb-[22px] pt-3.5">
@@ -73,7 +73,7 @@ export default function Notes({ vals, actions }) {
       {/* Add a new target */}
       <div className="panel col-span-full">
         <div className="border-b border-hair/[0.08] px-[22px] py-[18px]">
-          <div className="text-[19px] font-semibold tracking-[-0.01em]">Add a new target</div>
+          <div className="text-[19px] font-head font-semibold tracking-[-0.01em]">Add a new target</div>
           <div className="mt-1 text-[13px] text-mute">
             A new business or goal — it gets its own card, its own row in the monthly roadmap, and appears in every task dropdown.
           </div>
@@ -174,7 +174,7 @@ export default function Notes({ vals, actions }) {
       {/* Notes */}
       <div className="panel col-span-full">
         <div className="flex items-center justify-between border-b border-hair/[0.08] px-[22px] py-[18px]">
-          <div className="text-[19px] font-semibold tracking-[-0.01em]">Notes</div>
+          <div className="text-[19px] font-head font-semibold tracking-[-0.01em]">Notes</div>
           <div className="mono text-[11px] tracking-[0.14em] text-mute2">SAVED AUTOMATICALLY</div>
         </div>
         <div className="px-[22px] py-5">
@@ -203,7 +203,7 @@ function ItemList({ title, count, rows, actions }) {
   return (
     <div className="panel">
       <div className="flex items-center justify-between border-b border-hair/[0.08] px-[22px] py-[18px]">
-        <div className="text-[19px] font-semibold tracking-[-0.01em]">{title}</div>
+        <div className="text-[19px] font-head font-semibold tracking-[-0.01em]">{title}</div>
         <div className="mono text-[11px] tracking-[0.14em] text-mute2">{count}</div>
       </div>
       <div className="flex max-h-[620px] flex-col gap-2.5 overflow-auto px-[22px] pb-[22px] pt-3.5">

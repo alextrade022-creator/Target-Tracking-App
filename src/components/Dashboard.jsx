@@ -11,7 +11,7 @@ export default function Dashboard({ vals, actions }) {
         {(goals ?? []).map((g) => (
           <div key={g.k} className="stat relative overflow-hidden px-4 pb-3.5 pt-4">
             <div className="absolute bottom-0 left-0 top-0 w-[3px]" style={{ background: g.color }} />
-            <div className="text-[17px] font-semibold tracking-[-0.01em]">{g.name}</div>
+            <div className="text-[17px] font-head font-semibold tracking-[-0.01em]">{g.name}</div>
             <div className="mt-1.5 min-h-[34px] text-[13px] text-mute" style={{ textWrap: 'pretty' }}>{g.target}</div>
             <div className="mono mt-0.5 text-[11px] tracking-[0.06em] text-mute2">DUE {g.due}</div>
             <div className="mt-3 flex items-center gap-2">
@@ -59,7 +59,7 @@ export default function Dashboard({ vals, actions }) {
       {/* Monthly roadmap */}
       <div className="panel mt-[22px]">
         <div className="flex items-center justify-between border-b border-hair/[0.08] px-[22px] py-[18px]">
-          <div className="text-[19px] font-semibold tracking-[-0.01em]">Monthly roadmap</div>
+          <div className="text-[19px] font-head font-semibold tracking-[-0.01em]">Monthly roadmap</div>
           <div className="mono text-[11px] tracking-[0.14em] text-mute2">CLICK A MONTH TO SEE ITS WEEKLY PLAN</div>
         </div>
 
@@ -74,17 +74,17 @@ export default function Dashboard({ vals, actions }) {
               key={i}
               onClick={m.select}
               className="cursor-pointer border-l border-hair/[0.07] px-3 py-2.5"
-              style={{ background: m.selected ? 'rgba(78,205,196,.10)' : m.current ? 'rgba(244,211,94,.06)' : 'transparent' }}
+              style={{ background: m.selected ? 'rgba(14,165,114,.10)' : m.current ? 'rgba(244,211,94,.06)' : 'transparent' }}
             >
               <div className="flex items-center gap-1.5">
-                <div className="text-[15px] font-semibold" style={{ color: m.selected ? '#4ECDC4' : 'var(--soft)' }}>{m.label}</div>
+                <div className="text-[15px] font-semibold" style={{ color: m.selected ? '#0EA572' : 'var(--soft)' }}>{m.label}</div>
                 <div className="mono text-[11px] text-mute2">'{m.yr}</div>
                 {m.current && (
                   <div className="mono rounded bg-yellow px-[5px] py-px text-[9px] tracking-[0.1em] text-onaccent">NOW</div>
                 )}
               </div>
               <div className="mt-[7px] flex items-center gap-[7px]">
-                <Bar className="flex-1" pct={m.pct} color="#4ECDC4" height={4} />
+                <Bar className="flex-1" pct={m.pct} color="#0EA572" height={4} />
                 <div className="mono text-[10px] text-slate">{m.ratio}</div>
               </div>
             </div>
@@ -136,12 +136,12 @@ export default function Dashboard({ vals, actions }) {
         <div className="panel mt-[34px]">
           <div className="flex items-center justify-between border-b border-hair/[0.08] px-[22px] py-[18px]">
             <div className="flex items-baseline gap-3">
-              <div className="text-[19px] font-semibold tracking-[-0.01em]">Weekly plan</div>
+              <div className="text-[19px] font-head font-semibold tracking-[-0.01em]">Weekly plan</div>
               <div className="mono text-[12px] tracking-[0.14em] text-yellow">{vals.selMonthLabel}</div>
             </div>
             <div className="flex items-center gap-3.5">
               <div className="mono text-[12px] text-mute">{vals.weekRatio} actions done</div>
-              <Bar className="w-[150px]" pct={vals.weekPct} color="#4ECDC4" />
+              <Bar className="w-[150px]" pct={vals.weekPct} color="#0EA572" />
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">

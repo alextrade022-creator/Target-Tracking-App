@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CONFIG } from '../config'
 import {
   MONTHS, FULL, NOW, GOALS, WEEKLY, STAGES, DUE_ISO, PALETTE,
-  MONTH_NAMES, DOW, BRAND_STAGES, PLATFORMS,
+  MONTH_NAMES, DOW, BRAND_STAGES, PLATFORMS, DEPARTMENTS, LEAD_STAGES, LEAD_SUBS,
 } from '../lib/constants'
 import { iso, fmt, pretty, todayLabel } from '../lib/helpers'
 import { getState, putSlice } from '../lib/api'
@@ -34,6 +34,10 @@ const initialState = () => ({
   gedits: {},
   branding: [],
   brandTags: [],
+  leads: [],
+  leadView: 'pipeline', // 'pipeline' | 'total'
+  leadDraft: { name: '', phone: '', dept: 'financial', date: iso(new Date()) },
+  leadFilters: { dept: 'all', stage: 'all', sub: 'all', month: '', date: '' },
   gdraft: { name: '', target: '', due: '2027-03-31', color: '#5FA8FF' },
   draft: { goal: 'edudot', month: NOW, week: 'ms', text: '' },
   tdraft: { title: '', who: '', from: iso(new Date()), due: '', details: '' },
@@ -82,6 +86,7 @@ export function useTargetTracker() {
           gedits: data.goalEdits ?? {},
           branding: data.branding ?? [],
           brandTags: data.brandTags ?? [],
+          leads: data.leads ?? [],
         })
       }
       hydrated.current = true
@@ -107,6 +112,7 @@ export function useTargetTracker() {
   useEffect(() => persist('goalEdits', state.gedits), [state.gedits, persist])
   useEffect(() => persist('branding', state.branding), [state.branding, persist])
   useEffect(() => persist('brandTags', state.brandTags), [state.brandTags, persist])
+  useEffect(() => persist('leads', state.leads), [state.leads, persist])
 
   /* ---- print handling ---- */
   useEffect(() => {
@@ -211,6 +217,69 @@ export function useTargetTracker() {
         const cur = Array.isArray(b.tags) ? b.tags : []
         const tags = cur.includes(tagId) ? cur.filter((t) => t !== tagId) : cur.concat([tagId])
         return { ...b, tags }
+      }),
+    }))
+  }, [update])
+
+  /* ---- lead pipeline ---- */
+  const setLeadView = useCallback((leadView) => update({ leadView }), [update])
+  const setLeadDraft = useCallback((patch) => update((s) => ({ leadDraft: { ...s.leadDraft, ...patch } })), [update])
+  const setLeadFilter = useCallback((patch) => update((s) => ({ leadFilters: { ...s.leadFilters, ...patch } })), [update])
+  const clearLeadFilters = useCallback(() => update({ leadFilters: { dept: 'all', stage: 'all', sub: 'all', month: '', date: '' } }), [update])
+
+  const addLead = useCallback(() => {
+    update((s) => {
+      const d = s.leadDraft || {}
+      const name = (d.name || '').trim()
+      if (!name) return {}
+      const item = {
+        id: 'l' + Date.now(), name, phone: (d.phone || '').trim(),
+        dept: d.dept || 'other', date: d.date || iso(new Date()),
+        stage: 'lead', substatus: '',
+        brand: '', place: '', businessType: '', businessSince: '', sales: '', situation: '',
+        notes: [], createdAt: Date.now(),
+      }
+      return { leads: (s.leads || []).concat([item]), leadDraft: { ...s.leadDraft, name: '', phone: '' } }
+    })
+  }, [update])
+
+  const patchLead = useCallback((id, patch) => {
+    update((s) => ({ leads: (s.leads || []).map((l) => (l.id === id ? { ...l, ...patch } : l)) }))
+  }, [update])
+
+  const moveLead = useCallback((id, dir) => {
+    update((s) => {
+      const order = LEAD_STAGES.map((x) => x.k)
+      return {
+        leads: (s.leads || []).map((l) => {
+          if (l.id !== id) return l
+          const i = Math.max(0, Math.min(order.length - 1, order.indexOf(l.stage) + dir))
+          // moving to a new stage clears the (stage-specific) sub-status
+          return { ...l, stage: order[i], substatus: order[i] === l.stage ? l.substatus : '' }
+        }),
+      }
+    })
+  }, [update])
+
+  const removeLead = useCallback((id) => update((s) => ({ leads: (s.leads || []).filter((l) => l.id !== id) })), [update])
+
+  const addLeadNote = useCallback((id, text) => {
+    const t = (text || '').trim()
+    if (!t) return
+    update((s) => ({
+      leads: (s.leads || []).map((l) => {
+        if (l.id !== id) return l
+        const notes = (Array.isArray(l.notes) ? l.notes : []).concat([{ id: 'n' + Date.now(), text: t, at: iso(new Date()) }])
+        return { ...l, notes }
+      }),
+    }))
+  }, [update])
+
+  const removeLeadNote = useCallback((id, noteId) => {
+    update((s) => ({
+      leads: (s.leads || []).map((l) => {
+        if (l.id !== id) return l
+        return { ...l, notes: (Array.isArray(l.notes) ? l.notes : []).filter((n) => n.id !== noteId) }
       }),
     }))
   }, [update])
@@ -339,12 +408,13 @@ export function useTargetTracker() {
   const setCal = useCallback((patch) => update(patch), [update])
 
   /* --------------------- derived view values --------------------- */
-  const vals = useMemo(() => computeVals(state, { toggle, editText, hideItem, moveTodo, archiveTodo, removeTodo, removeTask, restoreArchived, dropArchived, patchMeeting, removeMeeting, editGoal, removeGoal, setSel, setFilter, selectDay, setM, setCal, toggleBrandingStage, toggleBrandingPlatform, setBrandingDate, removeBranding, patchBranding, toggleBrandingTag, editBrandTag, removeBrandTag }), [
+  const vals = useMemo(() => computeVals(state, { toggle, editText, hideItem, moveTodo, archiveTodo, removeTodo, removeTask, restoreArchived, dropArchived, patchMeeting, removeMeeting, editGoal, removeGoal, setSel, setFilter, selectDay, setM, setCal, toggleBrandingStage, toggleBrandingPlatform, setBrandingDate, removeBranding, patchBranding, toggleBrandingTag, editBrandTag, removeBrandTag, patchLead, moveLead, removeLead, addLeadNote, removeLeadNote, setLeadFilter }), [
     state, toggle, editText, hideItem, moveTodo, archiveTodo, removeTodo, removeTask,
     restoreArchived, dropArchived, patchMeeting, removeMeeting, editGoal, removeGoal,
     setSel, setFilter, selectDay, setM, setCal,
     toggleBrandingStage, toggleBrandingPlatform, setBrandingDate, removeBranding, patchBranding,
     toggleBrandingTag, editBrandTag, removeBrandTag,
+    patchLead, moveLead, removeLead, addLeadNote, removeLeadNote, setLeadFilter,
   ])
 
   return {
@@ -358,6 +428,8 @@ export function useTargetTracker() {
       setB, addBranding, patchBranding, toggleBrandingStage, toggleBrandingPlatform,
       setBrandingDate, removeBranding,
       setTagDraft, addBrandTag, editBrandTag, removeBrandTag, toggleBrandingTag,
+      setLeadView, setLeadDraft, setLeadFilter, clearLeadFilters, addLead, patchLead,
+      moveLead, removeLead, addLeadNote, removeLeadNote,
     },
   }
 }
@@ -385,6 +457,7 @@ function computeVals(st, a) {
   const xgoalsArr = Array.isArray(st.xgoals) ? st.xgoals : []
   const brandingArr = Array.isArray(st.branding) ? st.branding : []
   const brandTagsArr = Array.isArray(st.brandTags) ? st.brandTags : []
+  const leadsArr = Array.isArray(st.leads) ? st.leads : []
 
   const sel = st.sel
   const target = CONFIG.targetStudents ?? 160
@@ -414,7 +487,7 @@ function computeVals(st, a) {
   })
 
   const nameOf = (k) => (ALL.find((g) => g && g.k === k) || {}).name || k || 'N/A'
-  const colorOf = (k) => (ALL.find((g) => g && g.k === k) || {}).color || '#4ECDC4'
+  const colorOf = (k) => (ALL.find((g) => g && g.k === k) || {}).color || '#0EA572'
   const txt = (id, fallback) => (editsMap[id] != null ? editsMap[id] : fallback)
 
   let allDone = 0
@@ -438,8 +511,8 @@ function computeVals(st, a) {
         if (isDone) { gd++; monthDone[mi]++ }
         return {
           id: o.id, t: o.t, toggle: () => a.toggle(o.id),
-          chipBg: o.custom ? 'rgba(78,205,196,.10)' : isDone ? 'rgb(var(--hair-rgb) / .03)' : 'rgb(var(--hair-rgb) / .055)',
-          chipBorder: o.custom ? 'rgba(78,205,196,.35)' : isDone ? 'rgb(var(--hair-rgb) / .05)' : 'rgb(var(--hair-rgb) / .09)',
+          chipBg: o.custom ? 'rgba(14,165,114,.10)' : isDone ? 'rgb(var(--hair-rgb) / .03)' : 'rgb(var(--hair-rgb) / .055)',
+          chipBorder: o.custom ? 'rgba(14,165,114,.35)' : isDone ? 'rgb(var(--hair-rgb) / .05)' : 'rgb(var(--hair-rgb) / .09)',
           ...box(isDone, g.color),
         }
       })
@@ -481,7 +554,7 @@ function computeVals(st, a) {
     const list = rows.map((o) => {
       const isDone = !!done[o.id]
       if (isDone) d++
-      return { id: o.id, text: o.text, toggle: () => a.toggle(o.id), ...box(isDone, o.custom ? '#4ECDC4' : '#7BC96F') }
+      return { id: o.id, text: o.text, toggle: () => a.toggle(o.id), ...box(isDone, o.custom ? '#0EA572' : '#7BC96F') }
     })
     wd += d; wt += rows.length
     return { label: 'WEEK ' + (wi + 1), tasks: list, ratio: d + '/' + rows.length, pct: rows.length ? Math.round((d / rows.length) * 100) : 0 }
@@ -667,7 +740,7 @@ function computeVals(st, a) {
       more: items.length > 4 ? '+' + (items.length - 4) + ' more' : '',
       numColor: out ? 'var(--cal-out)' : key === todayIso ? '#0A0E14' : 'var(--soft)',
       numBg: key === todayIso ? '#F4D35E' : 'transparent',
-      bg: key === st.calSel ? 'rgba(78,205,196,.09)' : out ? 'rgb(var(--hair-rgb) / .012)' : 'transparent',
+      bg: key === st.calSel ? 'rgba(14,165,114,.09)' : out ? 'rgb(var(--hair-rgb) / .012)' : 'transparent',
       select: () => a.selectDay(key),
     })
   }
@@ -738,14 +811,14 @@ function computeVals(st, a) {
         })),
         // every library tag as a toggle (on = assigned to this content)
         tagChips: brandTagsArr.map((t) => ({
-          id: t?.id, name: na(t?.name), color: t?.color || '#4ECDC4', on: tagIds.includes(t?.id),
+          id: t?.id, name: na(t?.name), color: t?.color || '#0EA572', on: tagIds.includes(t?.id),
           toggle: () => a.toggleBrandingTag(b?.id, t?.id),
         })),
         // just the assigned tags, for an at-a-glance read
         assignedTags: tagIds
           .map((id) => brandTagsArr.find((t) => t?.id === id))
           .filter(Boolean)
-          .map((t) => ({ id: t?.id, name: na(t?.name), color: t?.color || '#4ECDC4' })),
+          .map((t) => ({ id: t?.id, name: na(t?.name), color: t?.color || '#0EA572' })),
         postedDate: b?.postedDate || '',
         postedLabel: b?.postedDate ? pretty(b.postedDate) : 'N/A',
         setDate: (e) => a.setBrandingDate(b?.id, e.target.value),
@@ -763,10 +836,78 @@ function computeVals(st, a) {
   const brandTags = brandTagsArr.map((t) => ({
     id: t?.id,
     name: t?.name ?? '',
-    color: t?.color || '#4ECDC4',
+    color: t?.color || '#0EA572',
     edit: (patch) => a.editBrandTag(t?.id, patch),
     remove: () => a.removeBrandTag(t?.id),
   }))
+
+  /* ---- lead pipeline ---- */
+  const deptDef = (k) => DEPARTMENTS.find((d) => d.k === k) || { label: 'Other', color: '#8798AA' }
+  const stageDef = (k) => LEAD_STAGES.find((s) => s.k === k) || LEAD_STAGES[0]
+  const lf = st.leadFilters || {}
+  const leadsFiltered = leadsArr.filter((l) => {
+    if (lf.dept && lf.dept !== 'all' && l?.dept !== lf.dept) return false
+    if (lf.stage && lf.stage !== 'all' && l?.stage !== lf.stage) return false
+    if (lf.sub && lf.sub !== 'all' && (l?.substatus || '') !== lf.sub) return false
+    if (lf.date) {
+      if ((l?.date || '') !== lf.date) return false
+    } else if (lf.month && !(l?.date || '').startsWith(lf.month)) return false
+    return true
+  })
+
+  const stageIndex = (k) => LEAD_STAGES.findIndex((s) => s.k === k)
+  const leadCard = (l) => {
+    const sd = stageDef(l?.stage)
+    const dd = deptDef(l?.dept)
+    const si = stageIndex(l?.stage)
+    return {
+      id: l?.id,
+      name: na(l?.name), phone: na(l?.phone),
+      dept: l?.dept, deptLabel: dd.label, deptColor: dd.color,
+      stage: l?.stage, stageLabel: sd.label, stageColor: sd.color,
+      substatus: l?.substatus || '', hasSubs: (sd.subs || []).length > 0, subs: sd.subs || [],
+      date: l?.date || '', dateLabel: l?.date ? pretty(l.date) : 'N/A',
+      // raw editable fields
+      brand: l?.brand ?? '', place: l?.place ?? '', businessType: l?.businessType ?? '',
+      businessSince: l?.businessSince ?? '', sales: l?.sales ?? '', situation: l?.situation ?? '',
+      notes: (Array.isArray(l?.notes) ? l.notes : []).map((n) => ({
+        id: n?.id, text: na(n?.text), at: n?.at ? pretty(n.at) : '',
+        remove: () => a.removeLeadNote(l?.id, n?.id),
+      })),
+      canPrev: si > 0, canNext: si >= 0 && si < LEAD_STAGES.length - 1,
+      prev: () => a.moveLead(l?.id, -1),
+      next: () => a.moveLead(l?.id, 1),
+      setStage: (e) => a.patchLead(l?.id, { stage: e.target.value, substatus: '' }),
+      setSub: (e) => a.patchLead(l?.id, { substatus: e.target.value }),
+      setDept: (e) => a.patchLead(l?.id, { dept: e.target.value }),
+      patch: (p) => a.patchLead(l?.id, p),
+      addNote: (text) => a.addLeadNote(l?.id, text),
+      remove: () => a.removeLead(l?.id),
+    }
+  }
+
+  const leadStages = LEAD_STAGES.map((s) => {
+    const cards = leadsFiltered.filter((l) => l?.stage === s.k).map(leadCard)
+    return { k: s.k, label: s.label, color: s.color, count: cards.length, cards, empty: cards.length === 0 }
+  })
+  const leadsTable = leadsFiltered
+    .slice()
+    .sort((x, y) => (y?.createdAt || 0) - (x?.createdAt || 0))
+    .map(leadCard)
+  const leadStats = {
+    total: leadsFiltered.length,
+    grandTotal: leadsArr.length,
+    perStage: LEAD_STAGES.map((s) => ({
+      k: s.k, label: s.label, color: s.color,
+      count: leadsFiltered.filter((l) => l?.stage === s.k).length,
+    })),
+    perDept: DEPARTMENTS.map((d) => ({
+      k: d.k, label: d.label, color: d.color,
+      count: leadsFiltered.filter((l) => l?.dept === d.k).length,
+    })),
+  }
+  // options for the department <select> in the add form + filters
+  const deptOptions = DEPARTMENTS.map((d) => ({ k: d.k, label: d.label }))
 
   const page = st.printing ? 'report' : st.page
   const hiddenCount = Object.keys(hiddenMap).length
@@ -774,6 +915,11 @@ function computeVals(st, a) {
   return {
     branding, brandingStats, bdraft: st.bdraft,
     brandTags, tagDraft: st.tagDraft,
+    // lead pipeline
+    leadView: st.leadView, leadDraft: st.leadDraft, leadFilters: st.leadFilters,
+    leadStages, leadsTable, leadStats, deptOptions,
+    leadStageOptions: LEAD_STAGES.map((s) => ({ k: s.k, label: s.label })),
+    leadSubOptions: LEAD_SUBS,
     ownerName: CONFIG.ownerName ?? 'My Targets & Growth Plan',
     showWeekly: CONFIG.showWeeklyPlan ?? true,
     page,
