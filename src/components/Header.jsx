@@ -75,7 +75,7 @@ export default function Header({ vals, goPage, theme, toggleTheme }) {
               <div className="text-[13px] text-mute2">of {vals.totalCount} milestones</div>
             </div>
             <div className="mt-2">
-              <Bar pct={vals.pct} color="linear-gradient(90deg,#0EA572,#7BC96F)" height={6} />
+              <Bar pct={vals.pct} color="linear-gradient(90deg,#0EA572,#0EA572)" height={6} />
             </div>
           </div>
         </div>

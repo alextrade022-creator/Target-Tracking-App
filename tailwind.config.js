@@ -31,14 +31,15 @@ export default {
         onaccent: '#06231B',
         // Primary brand accent (green) — buttons, links, highlights. Same in both themes.
         teal: '#0EA572',
-        'teal-lt': '#34C892',
-        orange: '#FF8A3D',
-        purple: '#A78BFA',
-        yellow: '#F4D35E',
-        green: '#7BC96F',
-        pink: '#FF6B8A',
-        blue: '#5FA8FF',
-        lilac: '#E4A0FF',
+        'teal-lt': '#12b981',
+        // Professional categorical accents — all readable on light and dark green.
+        orange: '#DD6A1E',
+        purple: '#7C5AE8',
+        yellow: '#C6871B', // amber (was pale yellow — poor contrast on white)
+        green: '#0EA572',
+        pink: '#DC4A63', // rose
+        blue: '#2D74D8',
+        lilac: '#B45FD6',
       },
     },
   },

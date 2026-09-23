@@ -36,41 +36,6 @@ export default function Branding({ vals, actions }) {
         </div>
       </div>
 
-      {/* Tag library */}
-      <div className="panel mt-[22px]">
-        <div className="border-b border-hair/[0.08] px-[22px] py-[18px]">
-          <div className="text-[19px] font-head font-semibold tracking-[-0.01em]">Content tags</div>
-          <div className="mt-1 text-[13px] text-mute">
-            Reusable topic tags (like bookmarks). Give each a name and colour — they show on every content so you can
-            tell at a glance what the reel is about.
-          </div>
-        </div>
-        <div className="px-[22px] py-5">
-          {(brandTags ?? []).length > 0 && (
-            <div className="mb-4 flex flex-col gap-2.5">
-              {(brandTags ?? []).map((t) => (
-                <TagRow key={t.id} t={t} />
-              ))}
-            </div>
-          )}
-
-          {/* Add new tag */}
-          <div className="mono mb-2 text-[11px] tracking-[0.16em] text-mute2">NEW TAG</div>
-          <div className="flex flex-wrap items-center gap-3">
-            <input
-              className="field w-auto min-w-[180px] flex-1 px-3 py-2.5 text-[13.5px]"
-              placeholder="Tag name — e.g. Fitness, Business, Motivation"
-              value={tagDraft.name}
-              onChange={(e) => actions.setTagDraft({ name: e.target.value })}
-            />
-            <Swatches value={tagDraft.color} onPick={(c) => actions.setTagDraft({ color: c })} />
-            <button type="button" onClick={actions.addBrandTag} className="whitespace-nowrap rounded-lg bg-teal px-5 py-2.5 text-[13.5px] font-bold text-onaccent">
-              + Add tag
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Content list */}
       <div className="mt-[22px] flex flex-col gap-4">
         {(branding ?? []).map((c) => (
@@ -82,13 +47,76 @@ export default function Branding({ vals, actions }) {
           </div>
         )}
       </div>
+
+      {/* Tag manager — compact; add/manage revealed on demand */}
+      <TagManager brandTags={brandTags} tagDraft={tagDraft} actions={actions} />
+    </div>
+  )
+}
+
+function TagManager({ brandTags, tagDraft, actions }) {
+  const [showForm, setShowForm] = useState(false)
+  const [showManage, setShowManage] = useState(false)
+  const tags = brandTags ?? []
+  const add = () => {
+    if (!tagDraft.name.trim()) return
+    actions.addBrandTag()
+  }
+  return (
+    <div className="panel mt-[22px]">
+      <div className="flex flex-wrap items-center gap-3 px-[22px] py-4">
+        <div className="font-head text-[15px] font-semibold">Content tags</div>
+        <div className="flex flex-wrap gap-1.5">
+          {tags.map((t) => (
+            <span key={t.id} className="rounded-md px-2 py-0.5 text-[11px] font-semibold" style={{ color: t.color, background: t.color + '22', border: '1px solid ' + t.color }}>
+              {t.name || 'Tag'}
+            </span>
+          ))}
+          {tags.length === 0 && <span className="text-[12px] text-mute2">No tags yet — add one to label your content.</span>}
+        </div>
+        <div className="ml-auto flex items-center gap-2">
+          {tags.length > 0 && (
+            <button type="button" onClick={() => setShowManage((v) => !v)} className="mono rounded-lg border border-hair/[0.14] px-3 py-1.5 text-[11px] tracking-[0.1em] text-mute hover:text-fg">
+              {showManage ? 'DONE' : 'MANAGE'}
+            </button>
+          )}
+          <button type="button" onClick={() => setShowForm((v) => !v)} className="rounded-lg bg-teal px-3.5 py-1.5 text-[12.5px] font-bold text-onaccent">
+            {showForm ? 'Close' : '+ New tag'}
+          </button>
+        </div>
+      </div>
+
+      {showForm && (
+        <div className="border-t border-hair/[0.08] px-[22px] py-4">
+          <div className="mono mb-2 text-[11px] tracking-[0.16em] text-mute2">NEW TAG</div>
+          <div className="flex flex-wrap items-center gap-3">
+            <input
+              className="field w-auto min-w-[180px] flex-1 px-3 py-2.5 text-[13.5px]"
+              placeholder="Tag name — e.g. Finance, Personal story…"
+              value={tagDraft.name}
+              onChange={(e) => actions.setTagDraft({ name: e.target.value })}
+              onKeyDown={(e) => { if (e.key === 'Enter') add() }}
+            />
+            <Swatches value={tagDraft.color} onPick={(c) => actions.setTagDraft({ color: c })} />
+            <button type="button" onClick={add} className="whitespace-nowrap rounded-lg bg-teal px-5 py-2.5 text-[13.5px] font-bold text-onaccent">
+              + Add tag
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showManage && tags.length > 0 && (
+        <div className="flex flex-col gap-2.5 border-t border-hair/[0.08] px-[22px] py-4">
+          {tags.map((t) => <TagRow key={t.id} t={t} />)}
+        </div>
+      )}
     </div>
   )
 }
 
 function ContentCard({ c }) {
   const [editing, setEditing] = useState(false)
-  const statusColor = c.complete ? '#7BC96F' : c.stageDone > 0 ? '#F4D35E' : 'var(--mute)'
+  const statusColor = c.complete ? '#0EA572' : c.stageDone > 0 ? '#C6871B' : 'var(--mute)'
   return (
     <div className={cn('panel px-[22px] py-5', c.complete && 'border-green/40')}>
       {/* Status + assigned tags + edit + remove */}
@@ -96,7 +124,7 @@ function ContentCard({ c }) {
         <div className="flex flex-wrap items-center gap-2">
           <span
             className="mono rounded-md px-2.5 py-1 text-[10.5px] tracking-[0.12em]"
-            style={{ color: statusColor, background: c.complete ? 'rgba(123,201,111,.14)' : 'rgb(var(--hair-rgb) / .06)' }}
+            style={{ color: statusColor, background: c.complete ? 'rgba(14,165,114,.14)' : 'rgb(var(--hair-rgb) / .06)' }}
           >
             {c.statusLabel}
           </span>
@@ -171,7 +199,7 @@ function ContentCard({ c }) {
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <span className="mono mr-1 text-[10.5px] tracking-[0.14em] text-mute2">TAGS</span>
         {c.tagChips.length === 0 ? (
-          <span className="text-[12px] text-mute2">No tags yet — create some in “Content tags” above.</span>
+          <span className="text-[12px] text-mute2">No tags yet — add tags in the “Content tags” panel below.</span>
         ) : (
           c.tagChips.map((t) => <Toggle key={t.id} on={t.on} color={t.color} onClick={t.toggle} label={t.name} />)
         )}

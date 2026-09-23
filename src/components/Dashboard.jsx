@@ -74,7 +74,7 @@ export default function Dashboard({ vals, actions }) {
               key={i}
               onClick={m.select}
               className="cursor-pointer border-l border-hair/[0.07] px-3 py-2.5"
-              style={{ background: m.selected ? 'rgba(14,165,114,.10)' : m.current ? 'rgba(244,211,94,.06)' : 'transparent' }}
+              style={{ background: m.selected ? 'rgba(14,165,114,.10)' : m.current ? 'rgba(198,135,27,.06)' : 'transparent' }}
             >
               <div className="flex items-center gap-1.5">
                 <div className="text-[15px] font-semibold" style={{ color: m.selected ? '#0EA572' : 'var(--soft)' }}>{m.label}</div>
@@ -105,7 +105,7 @@ export default function Dashboard({ vals, actions }) {
               <div
                 key={ci}
                 className="flex min-h-[74px] flex-col gap-1.5 border-l border-hair/[0.06] p-[9px]"
-                style={{ background: cell.current ? 'rgba(244,211,94,.055)' : 'transparent' }}
+                style={{ background: cell.current ? 'rgba(198,135,27,.055)' : 'transparent' }}
               >
                 {(cell.ms ?? []).map((ms) => (
                   <div
@@ -151,7 +151,7 @@ export default function Dashboard({ vals, actions }) {
                   <div className="mono text-[12px] tracking-[0.14em] text-mute3">{w.label}</div>
                   <div className="mono text-[11px] text-mute2">{w.ratio}</div>
                 </div>
-                <Bar className="my-[9px]" pct={w.pct} color="#7BC96F" height={3} />
+                <Bar className="my-[9px]" pct={w.pct} color="#0EA572" height={3} />
                 <div className="flex flex-col gap-2">
                   {(w.tasks ?? []).map((t) => (
                     <div key={t.id} onClick={t.toggle} className="flex cursor-pointer items-start gap-2">

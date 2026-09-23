@@ -1,6 +1,33 @@
 import { useState } from 'react'
 import { cn } from '../lib/helpers'
 
+// Export the currently-filtered leads to a real .xlsx file. xlsx is loaded on
+// demand (dynamic import) so it stays out of the initial bundle.
+async function exportLeadsXlsx(rows) {
+  if (!rows || rows.length === 0) return
+  const XLSX = await import('xlsx')
+  const data = rows.map((l) => ({
+    Name: l.name,
+    Number: l.phone,
+    'Type of lead': l.deptLabel,
+    Stage: l.stageLabel,
+    'Sub-status': l.substatus || '',
+    Date: l.date || '',
+    'Brand / Client': l.brand || '',
+    Place: l.place || '',
+    'Business type': l.businessType || '',
+    'Business since': l.businessSince || '',
+    'Monthly / Yearly sales': l.sales || '',
+    'Current situation': l.situation || '',
+    Notes: (l.notes || []).map((n) => n.text).join(' | '),
+  }))
+  const ws = XLSX.utils.json_to_sheet(data)
+  ws['!cols'] = Object.keys(data[0] || {}).map((k) => ({ wch: k === 'Current situation' || k === 'Notes' ? 40 : 16 }))
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Leads')
+  XLSX.writeFile(wb, 'leads-' + new Date().toISOString().slice(0, 10) + '.xlsx')
+}
+
 export default function Leads({ vals, actions }) {
   const { leadView, leadDraft, leadFilters, leadStages, leadsTable, leadStats, deptOptions, leadStageOptions, leadSubOptions } = vals
 
@@ -36,8 +63,11 @@ export default function Leads({ vals, actions }) {
           <Filter label="MONTH">
             <input type="month" className="field w-auto px-2.5 py-2 text-[13px] text-soft" value={leadFilters.month} onChange={(e) => actions.setLeadFilter({ month: e.target.value })} />
           </Filter>
-          <Filter label="EXACT DATE">
-            <input type="date" className="field w-auto px-2.5 py-2 text-[13px] text-soft" value={leadFilters.date} onChange={(e) => actions.setLeadFilter({ date: e.target.value })} />
+          <Filter label="FROM DATE">
+            <input type="date" className="field w-auto px-2.5 py-2 text-[13px] text-soft" value={leadFilters.from} onChange={(e) => actions.setLeadFilter({ from: e.target.value })} />
+          </Filter>
+          <Filter label="TO DATE">
+            <input type="date" className="field w-auto px-2.5 py-2 text-[13px] text-soft" value={leadFilters.to} onChange={(e) => actions.setLeadFilter({ to: e.target.value })} />
           </Filter>
           <button type="button" onClick={actions.clearLeadFilters} className="mono rounded-lg border border-hair/[0.14] px-3.5 py-2.5 text-[11px] tracking-[0.12em] text-mute hover:text-fg">
             CLEAR
@@ -88,6 +118,14 @@ function Pipeline({ leadDraft, deptOptions, leadStages, actions }) {
             <select className="select" value={leadDraft.dept} onChange={(e) => actions.setLeadDraft({ dept: e.target.value })}>
               {deptOptions.map((d) => <option key={d.k} value={d.k}>{d.label}</option>)}
             </select>
+            {leadDraft.dept === 'other' && (
+              <input
+                className="field mt-2 px-2.5 py-2 text-[13px]"
+                placeholder="Specify type of lead…"
+                value={leadDraft.deptOther}
+                onChange={(e) => actions.setLeadDraft({ deptOther: e.target.value })}
+              />
+            )}
           </Labeled>
           <Labeled label="DATE">
             <input type="date" className="field" value={leadDraft.date} onChange={(e) => actions.setLeadDraft({ date: e.target.value })} />
@@ -166,6 +204,12 @@ function LeadDetail({ c }) {
         <Mini label="BUSINESS SINCE" value={c.businessSince} onChange={(e) => c.patch({ businessSince: e.target.value })} />
         <Mini label="MONTHLY / YEARLY SALES" value={c.sales} onChange={(e) => c.patch({ sales: e.target.value })} />
         <Labeled label="DATE"><input type="date" className="field px-2.5 py-2 text-[13px]" value={c.date} onChange={(e) => c.patch({ date: e.target.value })} /></Labeled>
+        <Labeled label="TYPE OF LEAD">
+          <select className="select py-2 text-[13px]" value={c.dept} onChange={c.setDept}>
+            {c.deptOptions.map((d) => <option key={d.k} value={d.k}>{d.label}</option>)}
+          </select>
+        </Labeled>
+        {c.isOther && <Mini label="OTHER TYPE" value={c.deptOther} onChange={(e) => c.patch({ deptOther: e.target.value })} />}
       </div>
       <div className="mt-2.5">
         <div className="mono mb-1.5 text-[10px] tracking-[0.14em] text-mute2">CURRENT SITUATION</div>
@@ -250,7 +294,17 @@ function TotalLeads({ leadStats, leadsTable }) {
       <div className="panel xl:col-span-2">
         <div className="flex items-center justify-between border-b border-hair/[0.08] px-[22px] py-[18px]">
           <div className="text-[19px] font-head font-semibold tracking-[-0.01em]">All leads</div>
-          <div className="mono text-[11px] tracking-[0.14em] text-mute2">{leadStats.total} SHOWN</div>
+          <div className="flex items-center gap-3">
+            <div className="mono text-[11px] tracking-[0.14em] text-mute2">{leadStats.total} SHOWN</div>
+            <button
+              type="button"
+              onClick={() => exportLeadsXlsx(leadsTable)}
+              disabled={!leadsTable || leadsTable.length === 0}
+              className="rounded-lg bg-teal px-3.5 py-2 text-[12.5px] font-bold text-onaccent disabled:opacity-40"
+            >
+              ⤓ Export Excel
+            </button>
+          </div>
         </div>
         <div className="overflow-x-auto px-[22px] py-4">
           <div className="min-w-[720px]">

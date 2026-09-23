@@ -36,9 +36,9 @@ const initialState = () => ({
   brandTags: [],
   leads: [],
   leadView: 'pipeline', // 'pipeline' | 'total'
-  leadDraft: { name: '', phone: '', dept: 'financial', date: iso(new Date()) },
-  leadFilters: { dept: 'all', stage: 'all', sub: 'all', month: '', date: '' },
-  gdraft: { name: '', target: '', due: '2027-03-31', color: '#5FA8FF' },
+  leadDraft: { name: '', phone: '', dept: 'finance', date: iso(new Date()), deptOther: '' },
+  leadFilters: { dept: 'all', stage: 'all', sub: 'all', month: '', from: '', to: '' },
+  gdraft: { name: '', target: '', due: '2027-03-31', color: '#2D74D8' },
   draft: { goal: 'edudot', month: NOW, week: 'ms', text: '' },
   tdraft: { title: '', who: '', from: iso(new Date()), due: '', details: '' },
   mdraft: { title: '', who: '', date: '2026-09-02', time: '10:00', notes: '' },
@@ -225,7 +225,7 @@ export function useTargetTracker() {
   const setLeadView = useCallback((leadView) => update({ leadView }), [update])
   const setLeadDraft = useCallback((patch) => update((s) => ({ leadDraft: { ...s.leadDraft, ...patch } })), [update])
   const setLeadFilter = useCallback((patch) => update((s) => ({ leadFilters: { ...s.leadFilters, ...patch } })), [update])
-  const clearLeadFilters = useCallback(() => update({ leadFilters: { dept: 'all', stage: 'all', sub: 'all', month: '', date: '' } }), [update])
+  const clearLeadFilters = useCallback(() => update({ leadFilters: { dept: 'all', stage: 'all', sub: 'all', month: '', from: '', to: '' } }), [update])
 
   const addLead = useCallback(() => {
     update((s) => {
@@ -234,7 +234,8 @@ export function useTargetTracker() {
       if (!name) return {}
       const item = {
         id: 'l' + Date.now(), name, phone: (d.phone || '').trim(),
-        dept: d.dept || 'other', date: d.date || iso(new Date()),
+        dept: d.dept || 'other', deptOther: d.dept === 'other' ? (d.deptOther || '').trim() : '',
+        date: d.date || iso(new Date()),
         stage: 'lead', substatus: '',
         brand: '', place: '', businessType: '', businessSince: '', sales: '', situation: '',
         notes: [], createdAt: Date.now(),
@@ -554,7 +555,7 @@ function computeVals(st, a) {
     const list = rows.map((o) => {
       const isDone = !!done[o.id]
       if (isDone) d++
-      return { id: o.id, text: o.text, toggle: () => a.toggle(o.id), ...box(isDone, o.custom ? '#0EA572' : '#7BC96F') }
+      return { id: o.id, text: o.text, toggle: () => a.toggle(o.id), ...box(isDone, o.custom ? '#0EA572' : '#0EA572') }
     })
     wd += d; wt += rows.length
     return { label: 'WEEK ' + (wi + 1), tasks: list, ratio: d + '/' + rows.length, pct: rows.length ? Math.round((d / rows.length) * 100) : 0 }
@@ -609,7 +610,7 @@ function computeVals(st, a) {
       wkRaw.push({
         id: o.id, text: o.text, month: m.label + " '" + m.yr,
         tag: 'WEEK ' + (o.wi + 1) + (o.custom ? ' · ADDED' : ''),
-        color: o.custom ? colorOf(o.goal) : '#7BC96F',
+        color: o.custom ? colorOf(o.goal) : '#0EA572',
       }),
     )
   })
@@ -626,8 +627,8 @@ function computeVals(st, a) {
         id: t?.id, title: na(t?.title), details: t?.details, who: t?.who,
         from: pretty(t?.from), due: pretty(t?.due),
         hasDetails: !!t?.details, hasWho: !!t?.who, hasFrom: !!t?.from, hasDue: !!t?.due,
-        dueColor: overdue ? '#FF6B8A' : 'var(--mute)',
-        dueBg: overdue ? 'rgba(255,107,138,.14)' : 'rgb(var(--hair-rgb) / .05)',
+        dueColor: overdue ? '#DC4A63' : 'var(--mute)',
+        dueBg: overdue ? 'rgba(220,74,99,.14)' : 'rgb(var(--hair-rgb) / .05)',
         accent: s.color,
         titleColor: s.k === 'done' ? 'var(--mute)' : 'var(--ring)',
         strike: s.k === 'done',
@@ -698,16 +699,16 @@ function computeVals(st, a) {
   const repTodos = todosArr.concat(archiveArr).map((t) => {
     const s =
       t?.status === 'done' ? { l: 'DONE', c: '#1F7A45', b: 'rgba(46,158,91,.14)' }
-      : t?.status === 'prog' ? { l: 'IN PROGRESS', c: '#8A6A00', b: 'rgba(244,211,94,.2)' }
+      : t?.status === 'prog' ? { l: 'IN PROGRESS', c: '#8A6A00', b: 'rgba(198,135,27,.2)' }
       : { l: 'TODO', c: '#B4441E', b: 'rgba(196,106,27,.14)' }
     return { title: na(t?.title), who: na(t?.who), due: t?.due ? pretty(t.due) : 'N/A', status: s.l, statusColor: s.c, statusBg: s.b }
   })
 
   /* ---- calendar ---- */
   const ST = {
-    pending: { l: 'Pending', c: '#F4D35E', b: 'rgba(244,211,94,.16)' },
-    done: { l: 'Done', c: '#7BC96F', b: 'rgba(123,201,111,.16)' },
-    cancelled: { l: 'Cancelled', c: '#FF6B8A', b: 'rgba(255,107,138,.14)' },
+    pending: { l: 'Pending', c: '#C6871B', b: 'rgba(198,135,27,.16)' },
+    done: { l: 'Done', c: '#0EA572', b: 'rgba(14,165,114,.16)' },
+    cancelled: { l: 'Cancelled', c: '#DC4A63', b: 'rgba(220,74,99,.14)' },
   }
   const first = new Date(st.calY, st.calM, 1)
   const startOffset = (first.getDay() + 6) % 7
@@ -730,7 +731,7 @@ function computeVals(st, a) {
     })
     todosArr.filter((t) => t?.due === key).forEach((t) =>
       items.push({
-        label: '☑ ' + na(t?.title), color: t?.status === 'done' ? '#7BC96F' : '#FF8A3D',
+        label: '☑ ' + na(t?.title), color: t?.status === 'done' ? '#0EA572' : '#DD6A1E',
         bg: 'rgb(var(--hair-rgb) / .06)', strike: t?.status === 'done',
       }),
     )
@@ -739,7 +740,7 @@ function computeVals(st, a) {
       items: items.slice(0, 4),
       more: items.length > 4 ? '+' + (items.length - 4) + ' more' : '',
       numColor: out ? 'var(--cal-out)' : key === todayIso ? '#0A0E14' : 'var(--soft)',
-      numBg: key === todayIso ? '#F4D35E' : 'transparent',
+      numBg: key === todayIso ? '#C6871B' : 'transparent',
       bg: key === st.calSel ? 'rgba(14,165,114,.09)' : out ? 'rgb(var(--hair-rgb) / .012)' : 'transparent',
       select: () => a.selectDay(key),
     })
@@ -764,7 +765,7 @@ function computeVals(st, a) {
   const dayTodos = todosArr.filter((t) => t?.due === st.calSel).map((t) => ({
     title: na(t?.title), who: na(t?.who),
     statusLabel: t?.status === 'done' ? 'Done' : t?.status === 'prog' ? 'In progress' : 'Todo',
-    statusColor: t?.status === 'done' ? '#7BC96F' : t?.status === 'prog' ? '#F4D35E' : '#FF8A3D',
+    statusColor: t?.status === 'done' ? '#0EA572' : t?.status === 'prog' ? '#C6871B' : '#DD6A1E',
   }))
 
   const selParts = (st.calSel || '').split('-')
@@ -849,9 +850,12 @@ function computeVals(st, a) {
     if (lf.dept && lf.dept !== 'all' && l?.dept !== lf.dept) return false
     if (lf.stage && lf.stage !== 'all' && l?.stage !== lf.stage) return false
     if (lf.sub && lf.sub !== 'all' && (l?.substatus || '') !== lf.sub) return false
-    if (lf.date) {
-      if ((l?.date || '') !== lf.date) return false
-    } else if (lf.month && !(l?.date || '').startsWith(lf.month)) return false
+    const d = l?.date || ''
+    if (lf.from || lf.to) {
+      // custom range takes precedence
+      if (lf.from && d < lf.from) return false
+      if (lf.to && d > lf.to) return false
+    } else if (lf.month && !d.startsWith(lf.month)) return false
     return true
   })
 
@@ -860,10 +864,14 @@ function computeVals(st, a) {
     const sd = stageDef(l?.stage)
     const dd = deptDef(l?.dept)
     const si = stageIndex(l?.stage)
+    const isOther = l?.dept === 'other'
+    const otherText = l?.deptOther ?? ''
     return {
       id: l?.id,
       name: na(l?.name), phone: na(l?.phone),
-      dept: l?.dept, deptLabel: dd.label, deptColor: dd.color,
+      dept: l?.dept, isOther, deptOther: otherText,
+      deptLabel: isOther ? (otherText.trim() || 'Other') : dd.label, deptColor: dd.color,
+      deptOptions: DEPARTMENTS.map((d) => ({ k: d.k, label: d.label })),
       stage: l?.stage, stageLabel: sd.label, stageColor: sd.color,
       substatus: l?.substatus || '', hasSubs: (sd.subs || []).length > 0, subs: sd.subs || [],
       date: l?.date || '', dateLabel: l?.date ? pretty(l.date) : 'N/A',

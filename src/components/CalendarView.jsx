@@ -15,10 +15,10 @@ export default function CalendarView({ vals, actions }) {
             <NavBtn onClick={() => actions.shiftMonth(1)}>›</NavBtn>
           </div>
           <div className="flex flex-wrap items-center gap-4">
-            <Key color="#F4D35E" label="Meeting pending" />
-            <Key color="#7BC96F" label="Done" />
-            <Key color="#FF6B8A" label="Cancelled" />
-            <Key color="#FF8A3D" label="Todo deadline" />
+            <Key color="#C6871B" label="Meeting pending" />
+            <Key color="#0EA572" label="Done" />
+            <Key color="#DC4A63" label="Cancelled" />
+            <Key color="#DD6A1E" label="Todo deadline" />
           </div>
         </div>
 
@@ -103,9 +103,9 @@ export default function CalendarView({ vals, actions }) {
                 </div>
                 {m.hasNotes && <div className="mt-2 text-[12.5px] leading-[1.5] text-mute" style={{ textWrap: 'pretty' }}>{m.notes}</div>}
                 <div className="mt-[11px] flex gap-[7px]">
-                  <StatusBtn color="#7BC96F" onClick={m.setDone}>Done</StatusBtn>
-                  <StatusBtn color="#F4D35E" onClick={m.setPending}>Pending</StatusBtn>
-                  <StatusBtn color="#FF6B8A" onClick={m.setCancel}>Cancel</StatusBtn>
+                  <StatusBtn color="#0EA572" onClick={m.setDone}>Done</StatusBtn>
+                  <StatusBtn color="#C6871B" onClick={m.setPending}>Pending</StatusBtn>
+                  <StatusBtn color="#DC4A63" onClick={m.setCancel}>Cancel</StatusBtn>
                 </div>
                 <div className="mt-2.5 flex items-center gap-2.5">
                   <div className="mono whitespace-nowrap text-[10px] tracking-[0.12em] text-mute2">POSTPONE TO</div>

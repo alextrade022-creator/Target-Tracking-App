@@ -24,7 +24,7 @@ export const NOW = 0
 
 export const GOALS = [
   {
-    k: 'edudot', name: 'EduDot', short: '5 BRANCHES', target: '5 new branches opened', due: '31 Dec 2026', color: '#FF8A3D',
+    k: 'edudot', name: 'EduDot', short: '5 BRANCHES', target: '5 new branches opened', due: '31 Dec 2026', color: '#DD6A1E',
     ms: { 0: ['Shortlist 3 locations', 'Branch 1 — open'], 1: ['Branch 2 — open'], 2: ['Branch 3 — open'], 3: ['Branch 4 — open', 'Branch 5 — open · 5/5'] },
   },
   {
@@ -32,19 +32,19 @@ export const GOALS = [
     steps: [10, 15, 20, 25, 25, 30, 35],
   },
   {
-    k: 'skillfly', name: 'SkillFly', short: '4 BRANCHES / TIE-UPS', target: '4 branches or associations across Kerala', due: '31 Mar 2027', color: '#A78BFA',
+    k: 'skillfly', name: 'SkillFly', short: '4 BRANCHES / TIE-UPS', target: '4 branches or associations across Kerala', due: '31 Mar 2027', color: '#7C5AE8',
     ms: { 0: ['Map 8 partner institutes'], 1: ['Tie-up 1 signed'], 3: ['Tie-up 2 signed'], 5: ['Tie-up 3 signed'], 6: ['Tie-up 4 signed · 4/4'] },
   },
   {
-    k: 'mentorway', name: 'MentorWay', short: '5 CLIENTS', target: '5 paying clients', due: '31 Mar 2027', color: '#F4D35E',
+    k: 'mentorway', name: 'MentorWay', short: '5 CLIENTS', target: '5 paying clients', due: '31 Mar 2027', color: '#C6871B',
     ms: { 0: ['Offer + pricing ready'], 1: ['Client 1 onboard'], 2: ['Client 2 onboard'], 3: ['Client 3 onboard'], 4: ['Client 4 onboard'], 5: ['Client 5 onboard · 5/5'] },
   },
   {
-    k: 'school', name: 'School Partnership', short: '1 COLLABORATION', target: '1 new school association', due: '31 Jan 2027', color: '#7BC96F',
+    k: 'school', name: 'School Partnership', short: '1 COLLABORATION', target: '1 new school association', due: '31 Jan 2027', color: '#0EA572',
     ms: { 1: ['Shortlist 5 schools'], 2: ['Proposal + pilot pitch'], 3: ['MoU negotiation'], 4: ['Collaboration signed · 1/1'] },
   },
   {
-    k: 'newops', name: 'New Opportunities', short: '2 LAUNCHES', target: '2 new courses or innovations', due: '31 Mar 2027', color: '#FF6B8A',
+    k: 'newops', name: 'New Opportunities', short: '2 LAUNCHES', target: '2 new courses or innovations', due: '31 Mar 2027', color: '#DC4A63',
     ms: { 2: ['Research — 3 concepts'], 3: ['Launch 1 — new course'], 4: ['Pilot batch + feedback'], 6: ['Launch 2 — innovation · 2/2'] },
   },
 ]
@@ -95,9 +95,9 @@ export const WEEKLY = [
 ]
 
 export const STAGES = [
-  { k: 'todo', label: 'TODO', color: '#FF8A3D', tint: 'rgba(255,138,61,.14)' },
-  { k: 'prog', label: 'IN PROGRESS', color: '#F4D35E', tint: 'rgba(244,211,94,.14)' },
-  { k: 'done', label: 'DONE', color: '#7BC96F', tint: 'rgba(123,201,111,.14)' },
+  { k: 'todo', label: 'TODO', color: '#DD6A1E', tint: 'rgba(221,106,30,.14)' },
+  { k: 'prog', label: 'IN PROGRESS', color: '#C6871B', tint: 'rgba(198,135,27,.14)' },
+  { k: 'done', label: 'DONE', color: '#0EA572', tint: 'rgba(14,165,114,.14)' },
 ]
 
 export const DUE_ISO = {
@@ -105,7 +105,9 @@ export const DUE_ISO = {
   mentorway: '2027-03-31', school: '2027-01-31', newops: '2027-03-31',
 }
 
-export const PALETTE = ['#0EA572', '#FF8A3D', '#A78BFA', '#F4D35E', '#7BC96F', '#FF6B8A', '#5FA8FF', '#E4A0FF']
+// Curated, professional swatch set (readable on light and dark): green, blue,
+// violet, orange, amber, rose, slate.
+export const PALETTE = ['#0EA572', '#2D74D8', '#7C5AE8', '#DD6A1E', '#C6871B', '#DC4A63', '#5B6B7C']
 
 export const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -125,30 +127,30 @@ export const SLICES = [
 // Lead pipeline: consultation departments (type of lead), shown as coloured chips.
 // Adjust these labels/colours to your actual services.
 export const DEPARTMENTS = [
-  { k: 'financial', label: 'Financial Consultation', color: '#0EA572' },
-  { k: 'marketing', label: 'Marketing Consulting', color: '#FF8A3D' },
-  { k: 'business', label: 'Business Strategy', color: '#A78BFA' },
-  { k: 'branding', label: 'Branding', color: '#E4A0FF' },
-  { k: 'other', label: 'Other', color: '#8798AA' },
+  { k: 'finance', label: 'Finance', color: '#0EA572' },
+  { k: 'operation', label: 'Operation', color: '#2D74D8' },
+  { k: 'marketing', label: 'Marketing', color: '#DD6A1E' },
+  { k: 'sales', label: 'Sales', color: '#7C5AE8' },
+  { k: 'other', label: 'Other', color: '#5B6B7C' },
 ]
 
 // Pipeline stages in order. `subs` are the sub-statuses a lead can carry while in
 // that stage (empty = no sub-status for that stage).
 export const LEAD_STAGES = [
-  { k: 'lead', label: 'Lead', color: '#8798AA', subs: [] },
+  { k: 'lead', label: 'Lead', color: '#5B6B7C', subs: [] },
   {
-    k: 'contacted', label: 'Contacted', color: '#5FA8FF',
+    k: 'contacted', label: 'Contacted', color: '#2D74D8',
     subs: ['Qualified', 'Not Qualified', 'Not Connected', 'Not Inquiry / Wrong Number', 'Enquiry for other service'],
   },
   {
-    k: 'active', label: 'Active Discussion', color: '#A78BFA',
+    k: 'active', label: 'Active Discussion', color: '#7C5AE8',
     subs: ['Requirement Identified', 'Follow-up Scheduled', 'Meeting Scheduled'],
   },
-  { k: 'meeting_sch', label: 'Meeting Scheduled', color: '#F4D35E', subs: [] },
-  { k: 'meeting_done', label: 'Meeting Done', color: '#FF8A3D', subs: [] },
-  { k: 'proposal', label: 'Proposal Shared', color: '#34C892', subs: [] },
+  { k: 'meeting_sch', label: 'Meeting Scheduled', color: '#C6871B', subs: [] },
+  { k: 'meeting_done', label: 'Meeting Done', color: '#DD6A1E', subs: [] },
+  { k: 'proposal', label: 'Proposal Shared', color: '#0FA3A3', subs: [] },
   {
-    k: 'final', label: 'Final Deal', color: '#7BC96F',
+    k: 'final', label: 'Final Deal', color: '#0EA572',
     subs: ['Closed Won', 'Proposal Under Review', 'Pending Payment Issue', 'Lost - Invalid Prospect'],
   },
 ]
@@ -158,13 +160,13 @@ export const LEAD_SUBS = [...new Set(LEAD_STAGES.flatMap((s) => s.subs))]
 
 // Personal-branding: production stages (in pipeline order) and target platforms.
 export const BRAND_STAGES = [
-  { k: 'shoot', label: 'Shoot', color: '#FF8A3D' },
-  { k: 'edit', label: 'Edit', color: '#F4D35E' },
-  { k: 'post', label: 'Post', color: '#7BC96F' },
+  { k: 'shoot', label: 'Shoot', color: '#DD6A1E' },
+  { k: 'edit', label: 'Edit', color: '#C6871B' },
+  { k: 'post', label: 'Post', color: '#0EA572' },
 ]
 
 export const PLATFORMS = [
-  { k: 'instagram', label: 'Instagram', color: '#E4A0FF' },
-  { k: 'youtube', label: 'YouTube', color: '#FF6B8A' },
-  { k: 'facebook', label: 'Facebook', color: '#5FA8FF' },
+  { k: 'instagram', label: 'Instagram', color: '#B45FD6' },
+  { k: 'youtube', label: 'YouTube', color: '#DC4A63' },
+  { k: 'facebook', label: 'Facebook', color: '#2D74D8' },
 ]
