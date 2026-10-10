@@ -28,7 +28,7 @@ export const GOALS = [
     ms: { 0: ['Shortlist 3 locations', 'Branch 1 — open'], 1: ['Branch 2 — open'], 2: ['Branch 3 — open'], 3: ['Branch 4 — open', 'Branch 5 — open · 5/5'] },
   },
   {
-    k: 'qissa', name: 'Qissa Learning', short: '120–200 STUDENTS', target: '120–200 students enrolled', due: '31 Mar 2027', color: '#0EA572',
+    k: 'qissa', name: 'Qissa Learning', short: '120–200 STUDENTS', target: '120–200 students enrolled', due: '31 Mar 2027', color: '#16A34A',
     steps: [10, 15, 20, 25, 25, 30, 35],
   },
   {
@@ -40,7 +40,7 @@ export const GOALS = [
     ms: { 0: ['Offer + pricing ready'], 1: ['Client 1 onboard'], 2: ['Client 2 onboard'], 3: ['Client 3 onboard'], 4: ['Client 4 onboard'], 5: ['Client 5 onboard · 5/5'] },
   },
   {
-    k: 'school', name: 'School Partnership', short: '1 COLLABORATION', target: '1 new school association', due: '31 Jan 2027', color: '#0EA572',
+    k: 'school', name: 'School Partnership', short: '1 COLLABORATION', target: '1 new school association', due: '31 Jan 2027', color: '#16A34A',
     ms: { 1: ['Shortlist 5 schools'], 2: ['Proposal + pilot pitch'], 3: ['MoU negotiation'], 4: ['Collaboration signed · 1/1'] },
   },
   {
@@ -97,7 +97,7 @@ export const WEEKLY = [
 export const STAGES = [
   { k: 'todo', label: 'TODO', color: '#DD6A1E', tint: 'rgba(221,106,30,.14)' },
   { k: 'prog', label: 'IN PROGRESS', color: '#C6871B', tint: 'rgba(198,135,27,.14)' },
-  { k: 'done', label: 'DONE', color: '#0EA572', tint: 'rgba(14,165,114,.14)' },
+  { k: 'done', label: 'DONE', color: '#16A34A', tint: 'rgba(22,163,74,.14)' },
 ]
 
 export const DUE_ISO = {
@@ -107,7 +107,7 @@ export const DUE_ISO = {
 
 // Curated, professional swatch set (readable on light and dark): green, blue,
 // violet, orange, amber, rose, slate.
-export const PALETTE = ['#0EA572', '#2D74D8', '#7C5AE8', '#DD6A1E', '#C6871B', '#DC4A63', '#5B6B7C']
+export const PALETTE = ['#16A34A', '#2D74D8', '#7C5AE8', '#DD6A1E', '#C6871B', '#DC4A63', '#5B6B7C']
 
 export const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -127,7 +127,7 @@ export const SLICES = [
 // Lead pipeline: consultation departments (type of lead), shown as coloured chips.
 // Adjust these labels/colours to your actual services.
 export const DEPARTMENTS = [
-  { k: 'finance', label: 'Finance', color: '#0EA572' },
+  { k: 'finance', label: 'Finance', color: '#16A34A' },
   { k: 'operation', label: 'Operation', color: '#2D74D8' },
   { k: 'marketing', label: 'Marketing', color: '#DD6A1E' },
   { k: 'sales', label: 'Sales', color: '#7C5AE8' },
@@ -150,7 +150,7 @@ export const LEAD_STAGES = [
   { k: 'meeting_done', label: 'Meeting Done', color: '#DD6A1E', subs: [] },
   { k: 'proposal', label: 'Proposal Shared', color: '#0FA3A3', subs: [] },
   {
-    k: 'final', label: 'Final Deal', color: '#0EA572',
+    k: 'final', label: 'Final Deal', color: '#16A34A',
     subs: ['Closed Won', 'Proposal Under Review', 'Pending Payment Issue', 'Lost - Invalid Prospect'],
   },
 ]
@@ -162,11 +162,17 @@ export const LEAD_SUBS = [...new Set(LEAD_STAGES.flatMap((s) => s.subs))]
 export const BRAND_STAGES = [
   { k: 'shoot', label: 'Shoot', color: '#DD6A1E' },
   { k: 'edit', label: 'Edit', color: '#C6871B' },
-  { k: 'post', label: 'Post', color: '#0EA572' },
+  { k: 'post', label: 'Post', color: '#16A34A' },
 ]
 
 export const PLATFORMS = [
   { k: 'instagram', label: 'Instagram', color: '#B45FD6' },
   { k: 'youtube', label: 'YouTube', color: '#DC4A63' },
   { k: 'facebook', label: 'Facebook', color: '#2D74D8' },
+]
+
+// Content format: short-form (reel/short) vs long-form (lengthy video).
+export const BRAND_FORMATS = [
+  { k: 'short', label: 'Short form', color: '#7C5AE8' },
+  { k: 'long', label: 'Lengthy video', color: '#2D74D8' },
 ]

@@ -3,7 +3,7 @@ import { cn } from '../lib/helpers'
 import { PALETTE } from '../lib/constants'
 
 export default function Branding({ vals, actions }) {
-  const { bdraft, brandingStats: st, branding, brandTags, tagDraft } = vals
+  const { bdraft, brandingStats: st, branding, brandTags, tagDraft, brandFilter, brandFormats, brandCounts } = vals
 
   return (
     <div className="mt-7">
@@ -21,7 +21,7 @@ export default function Branding({ vals, actions }) {
         <div className="border-b border-hair/[0.08] px-[22px] py-[18px]">
           <div className="text-[19px] font-head font-semibold tracking-[-0.01em]">Write new content</div>
           <div className="mt-1 text-[13px] text-mute">
-            Draft the three parts of your post. Adding it drops a new content card below and bumps your total.
+            Draft the three parts of your post and pick the format. It appears as a card in the gallery below.
           </div>
         </div>
         <div className="grid grid-cols-1 gap-3.5 px-[22px] py-5 md:grid-cols-3">
@@ -29,21 +29,36 @@ export default function Branding({ vals, actions }) {
           <WriteBox label="BODY" placeholder="The main value / story…" value={bdraft.body} onChange={(e) => actions.setB({ body: e.target.value })} />
           <WriteBox label="CTA" placeholder="The call to action…" value={bdraft.cta} onChange={(e) => actions.setB({ cta: e.target.value })} />
         </div>
-        <div className="px-[22px] pb-5">
+        <div className="flex flex-wrap items-end gap-4 px-[22px] pb-5">
+          <div>
+            <div className="mono mb-[7px] text-[11px] tracking-[0.16em] text-mute2">FORMAT</div>
+            <select className="select w-auto min-w-[170px]" value={bdraft.format} onChange={(e) => actions.setB({ format: e.target.value })}>
+              {brandFormats.map((f) => <option key={f.k} value={f.k}>{f.label}</option>)}
+            </select>
+          </div>
           <button type="button" onClick={actions.addBranding} className="rounded-lg bg-teal px-[26px] py-3 text-[14px] font-bold text-onaccent">
             + Add content
           </button>
         </div>
       </div>
 
-      {/* Content list */}
-      <div className="mt-[22px] flex flex-col gap-4">
+      {/* Format filter */}
+      <div className="mt-[22px] flex flex-wrap items-center gap-2">
+        <span className="mono mr-1 text-[11px] tracking-[0.14em] text-mute2">SHOW</span>
+        <FilterPill on={brandFilter === 'all'} onClick={() => actions.setBrandFilter('all')} label={`All (${brandCounts.all})`} />
+        {brandFormats.map((f) => (
+          <FilterPill key={f.k} on={brandFilter === f.k} onClick={() => actions.setBrandFilter(f.k)} label={`${f.label} (${brandCounts[f.k]})`} />
+        ))}
+      </div>
+
+      {/* Content gallery — 1 / 2 / 3 columns by width */}
+      <div className="mt-4 grid grid-cols-1 items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {(branding ?? []).map((c) => (
-          <ContentCard key={c.id} c={c} />
+          <ContentCard key={c.id} c={c} formats={brandFormats} />
         ))}
         {(!branding || branding.length === 0) && (
-          <div className="panel px-[22px] py-8 text-center text-[13px] text-mute2">
-            No content yet — write your first hook, body and CTA above.
+          <div className="panel col-span-full px-[22px] py-8 text-center text-[13px] text-mute2">
+            {brandCounts.all === 0 ? 'No content yet — write your first hook, body and CTA above.' : 'No content in this format.'}
           </div>
         )}
       </div>
@@ -51,6 +66,21 @@ export default function Branding({ vals, actions }) {
       {/* Tag manager — compact; add/manage revealed on demand */}
       <TagManager brandTags={brandTags} tagDraft={tagDraft} actions={actions} />
     </div>
+  )
+}
+
+function FilterPill({ on, onClick, label }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'rounded-lg border px-3.5 py-1.5 text-[12.5px] font-semibold transition-colors',
+        on ? 'border-teal bg-teal text-onaccent' : 'border-hair/[0.14] text-mute hover:text-fg',
+      )}
+    >
+      {label}
+    </button>
   )
 }
 
@@ -114,97 +144,132 @@ function TagManager({ brandTags, tagDraft, actions }) {
   )
 }
 
-function ContentCard({ c }) {
+function ContentCard({ c, formats }) {
+  const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState(false)
-  const statusColor = c.complete ? '#0EA572' : c.stageDone > 0 ? '#C6871B' : 'var(--mute)'
+  const statusColor = c.complete ? '#16A34A' : c.stageDone > 0 ? '#C6871B' : 'var(--mute)'
   return (
-    <div className={cn('panel px-[22px] py-5', c.complete && 'border-green/40')}>
-      {/* Status + assigned tags + edit + remove */}
-      <div className="mb-3.5 flex items-start justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
+    <div className={cn('panel flex flex-col p-4', c.complete && 'border-green/40')}>
+      {/* Format + status + remove */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="rounded-md px-2 py-0.5 text-[10.5px] font-semibold" style={{ color: c.formatColor, background: c.formatColor + '22', border: '1px solid ' + c.formatColor }}>
+            {c.formatLabel}
+          </span>
           <span
-            className="mono rounded-md px-2.5 py-1 text-[10.5px] tracking-[0.12em]"
-            style={{ color: statusColor, background: c.complete ? 'rgba(14,165,114,.14)' : 'rgb(var(--hair-rgb) / .06)' }}
+            className="mono rounded-md px-2 py-0.5 text-[10px] tracking-[0.1em]"
+            style={{ color: statusColor, background: c.complete ? 'rgba(22,163,74,.14)' : 'rgb(var(--hair-rgb) / .06)' }}
           >
             {c.statusLabel}
           </span>
+        </div>
+        <button type="button" onClick={c.remove} className="px-0.5 text-[16px] leading-none text-mute2 hover:text-fg" aria-label="Remove content">×</button>
+      </div>
+
+      {/* HOOK — the identifier: what the video is about */}
+      <div className="mt-3 font-head text-[15px] font-semibold leading-[1.35]" style={{ textWrap: 'pretty' }}>
+        {c.hasHook ? c.hook : <span className="font-sans text-[13px] font-normal text-mute2">No hook written</span>}
+      </div>
+
+      {/* Assigned tags */}
+      {c.assignedTags.length > 0 && (
+        <div className="mt-2.5 flex flex-wrap gap-1.5">
           {c.assignedTags.map((t) => (
-            <span
-              key={t.id}
-              className="rounded-md px-2 py-1 text-[11px] font-semibold"
-              style={{ color: t.color, background: t.color + '22', border: '1px solid ' + t.color }}
-            >
+            <span key={t.id} className="rounded px-2 py-0.5 text-[10.5px] font-semibold" style={{ color: t.color, background: t.color + '22', border: '1px solid ' + t.color }}>
               {t.name}
             </span>
           ))}
         </div>
-        <div className="flex flex-none items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => setEditing((v) => !v)}
-            className={cn(
-              'mono rounded-md border px-2.5 py-1 text-[10.5px] tracking-[0.12em] transition-colors',
-              editing ? 'border-teal bg-teal text-onaccent' : 'border-hair/[0.14] text-mute hover:text-fg',
-            )}
-          >
-            {editing ? 'DONE' : 'EDIT'}
-          </button>
-          <button type="button" onClick={c.remove} className="px-1 text-[16px] leading-none text-mute2 hover:text-fg" aria-label="Remove content">
-            ×
-          </button>
-        </div>
-      </div>
-
-      {/* Hook / Body / CTA — read-only, or editable when editing */}
-      {editing ? (
-        <div className="grid grid-cols-1 gap-3.5 md:grid-cols-3">
-          <EditBox label="HOOK" value={c.hookRaw} onChange={(e) => c.patch({ hook: e.target.value })} />
-          <EditBox label="BODY" value={c.bodyRaw} onChange={(e) => c.patch({ body: e.target.value })} />
-          <EditBox label="CTA" value={c.ctaRaw} onChange={(e) => c.patch({ cta: e.target.value })} />
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-3.5 md:grid-cols-3">
-          <Part label="HOOK" text={c.hook} />
-          <Part label="BODY" text={c.body} />
-          <Part label="CTA" text={c.cta} />
-        </div>
       )}
 
-      {/* Production checklist */}
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <span className="mono mr-1 text-[10.5px] tracking-[0.14em] text-mute2">CHECKLIST</span>
-        {c.stages.map((s) => (
-          <Toggle key={s.k} on={s.on} color={s.color} onClick={s.toggle} label={s.label} />
-        ))}
+      {/* Shoot / Edit / Post — quick status, at a glance */}
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {c.stages.map((s) => <StagePill key={s.k} on={s.on} color={s.color} onClick={s.toggle} label={s.label} />)}
       </div>
 
-      {/* Platforms + posted date */}
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <span className="mono mr-1 text-[10.5px] tracking-[0.14em] text-mute2">POSTED ON</span>
-        {c.platformChips.map((p) => (
-          <Toggle key={p.k} on={p.on} color={p.color} onClick={p.toggle} label={p.label} />
-        ))}
-        <div className="ml-auto flex items-center gap-2">
-          <span className="mono text-[10.5px] tracking-[0.14em] text-mute2">DATE</span>
-          <input
-            type="date"
-            className="field w-auto px-2.5 py-2 text-[13px] text-soft"
-            value={c.postedDate}
-            onChange={c.setDate}
-          />
+      {/* View details toggle */}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="mono mt-3 self-start text-[11px] tracking-[0.1em] text-teal hover:text-teal-lt"
+      >
+        {open ? 'HIDE DETAILS ▴' : 'VIEW DETAILS ▾'}
+      </button>
+
+      {open && (
+        <div className="mt-3 flex flex-col gap-3 border-t border-hair/[0.08] pt-3">
+          {/* Body + CTA (read-only or editable) */}
+          <div className="flex items-center justify-between">
+            <span className="mono text-[10.5px] tracking-[0.14em] text-mute2">CONTENT</span>
+            <button
+              type="button"
+              onClick={() => setEditing((v) => !v)}
+              className={cn('mono rounded-md border px-2 py-1 text-[10px] tracking-[0.12em] transition-colors', editing ? 'border-teal bg-teal text-onaccent' : 'border-hair/[0.14] text-mute hover:text-fg')}
+            >
+              {editing ? 'DONE' : 'EDIT'}
+            </button>
+          </div>
+          {editing ? (
+            <div className="flex flex-col gap-2.5">
+              <EditBox label="HOOK" value={c.hookRaw} onChange={(e) => c.patch({ hook: e.target.value })} />
+              <EditBox label="BODY" value={c.bodyRaw} onChange={(e) => c.patch({ body: e.target.value })} />
+              <EditBox label="CTA" value={c.ctaRaw} onChange={(e) => c.patch({ cta: e.target.value })} />
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2.5">
+              <Part label="BODY" text={c.body} />
+              <Part label="CTA" text={c.cta} />
+            </div>
+          )}
+
+          {/* Format */}
+          <div>
+            <div className="mono mb-1.5 text-[10px] tracking-[0.14em] text-mute2">FORMAT</div>
+            <select className="select w-auto min-w-[160px] py-2 text-[13px]" value={c.format} onChange={(e) => c.patch({ format: e.target.value })}>
+              {(formats ?? []).map((f) => <option key={f.k} value={f.k}>{f.label}</option>)}
+            </select>
+          </div>
+
+          {/* Platforms */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="mono mr-1 text-[10px] tracking-[0.14em] text-mute2">POSTED ON</span>
+            {c.platformChips.map((p) => <StagePill key={p.k} on={p.on} color={p.color} onClick={p.toggle} label={p.label} />)}
+          </div>
+
+          {/* Date */}
+          <div className="flex items-center gap-2">
+            <span className="mono text-[10px] tracking-[0.14em] text-mute2">DATE</span>
+            <input type="date" className="field w-auto px-2.5 py-1.5 text-[13px] text-soft" value={c.postedDate} onChange={c.setDate} />
+          </div>
+
+          {/* Tags assignment */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="mono mr-1 text-[10px] tracking-[0.14em] text-mute2">TAGS</span>
+            {c.tagChips.length === 0 ? (
+              <span className="text-[12px] text-mute2">Add tags in the “Content tags” panel below.</span>
+            ) : (
+              c.tagChips.map((t) => <StagePill key={t.id} on={t.on} color={t.color} onClick={t.toggle} label={t.name} />)
+            )}
+          </div>
         </div>
-      </div>
-
-      {/* Tags — assign the reusable topic tags to this content */}
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <span className="mono mr-1 text-[10.5px] tracking-[0.14em] text-mute2">TAGS</span>
-        {c.tagChips.length === 0 ? (
-          <span className="text-[12px] text-mute2">No tags yet — add tags in the “Content tags” panel below.</span>
-        ) : (
-          c.tagChips.map((t) => <Toggle key={t.id} on={t.on} color={t.color} onClick={t.toggle} label={t.name} />)
-        )}
-      </div>
+      )}
     </div>
+  )
+}
+
+function StagePill({ on, color, onClick, label }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'rounded-md border px-2 py-1 text-[11px] font-semibold transition-colors',
+        !on && 'border-hair/[0.14] bg-transparent text-mute hover:text-fg',
+      )}
+      style={on ? { color, background: color + '22', borderColor: color } : undefined}
+    >
+      {on ? '✓ ' : ''}{label}
+    </button>
   )
 }
 
@@ -284,18 +349,3 @@ function Part({ label, text }) {
   )
 }
 
-function Toggle({ on, color, onClick, label }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'rounded-lg border px-3 py-1.5 text-[12.5px] font-semibold transition-colors',
-        !on && 'border-hair/[0.14] bg-transparent text-mute hover:text-fg',
-      )}
-      style={on ? { color, background: color + '22', borderColor: color } : undefined}
-    >
-      {on ? '✓ ' : ''}{label}
-    </button>
-  )
-}

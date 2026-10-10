@@ -74,17 +74,17 @@ export default function Dashboard({ vals, actions }) {
               key={i}
               onClick={m.select}
               className="cursor-pointer border-l border-hair/[0.07] px-3 py-2.5"
-              style={{ background: m.selected ? 'rgba(14,165,114,.10)' : m.current ? 'rgba(198,135,27,.06)' : 'transparent' }}
+              style={{ background: m.selected ? 'rgba(22,163,74,.10)' : m.current ? 'rgba(198,135,27,.06)' : 'transparent' }}
             >
               <div className="flex items-center gap-1.5">
-                <div className="text-[15px] font-semibold" style={{ color: m.selected ? '#0EA572' : 'var(--soft)' }}>{m.label}</div>
+                <div className="text-[15px] font-semibold" style={{ color: m.selected ? '#16A34A' : 'var(--soft)' }}>{m.label}</div>
                 <div className="mono text-[11px] text-mute2">'{m.yr}</div>
                 {m.current && (
                   <div className="mono rounded bg-yellow px-[5px] py-px text-[9px] tracking-[0.1em] text-onaccent">NOW</div>
                 )}
               </div>
               <div className="mt-[7px] flex items-center gap-[7px]">
-                <Bar className="flex-1" pct={m.pct} color="#0EA572" height={4} />
+                <Bar className="flex-1" pct={m.pct} color="#16A34A" height={4} />
                 <div className="mono text-[10px] text-slate">{m.ratio}</div>
               </div>
             </div>
@@ -141,7 +141,7 @@ export default function Dashboard({ vals, actions }) {
             </div>
             <div className="flex items-center gap-3.5">
               <div className="mono text-[12px] text-mute">{vals.weekRatio} actions done</div>
-              <Bar className="w-[150px]" pct={vals.weekPct} color="#0EA572" />
+              <Bar className="w-[150px]" pct={vals.weekPct} color="#16A34A" />
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
@@ -151,7 +151,7 @@ export default function Dashboard({ vals, actions }) {
                   <div className="mono text-[12px] tracking-[0.14em] text-mute3">{w.label}</div>
                   <div className="mono text-[11px] text-mute2">{w.ratio}</div>
                 </div>
-                <Bar className="my-[9px]" pct={w.pct} color="#0EA572" height={3} />
+                <Bar className="my-[9px]" pct={w.pct} color="#16A34A" height={3} />
                 <div className="flex flex-col gap-2">
                   {(w.tasks ?? []).map((t) => (
                     <div key={t.id} onClick={t.toggle} className="flex cursor-pointer items-start gap-2">

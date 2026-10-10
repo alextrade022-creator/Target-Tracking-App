@@ -11,7 +11,8 @@
     "dev:web": "vite",
     "dev:api": "node --env-file-if-exists=.env server/dev.js",
     "build": "vite build",
-    "preview": "concurrently -k -n web,api -c cyan,green \"vite preview\" \"npm:dev:api\""
+    "preview": "concurrently -k -n web,api -c cyan,green \"vite preview\" \"npm:dev:api\"",
+    "set-login": "node scripts/set-login.mjs"
   },
   "dependencies": {
     "mongodb": "^6.12.0",

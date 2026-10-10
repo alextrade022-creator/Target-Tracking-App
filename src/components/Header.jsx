@@ -62,7 +62,7 @@ export default function Header({ vals, goPage, theme, toggleTheme }) {
         </div>
 
         <div className="flex flex-wrap gap-3 sm:gap-3.5">
-          <Stat label="DONE" valueClass="text-teal" className="min-w-[104px] flex-1 sm:flex-none">
+          <Stat label="DONE" valueClass="text-green" className="min-w-[104px] flex-1 sm:flex-none">
             {vals.doneCount}
           </Stat>
           <Stat label="PENDING" valueClass="text-orange" className="min-w-[104px] flex-1 sm:flex-none">
@@ -75,7 +75,7 @@ export default function Header({ vals, goPage, theme, toggleTheme }) {
               <div className="text-[13px] text-mute2">of {vals.totalCount} milestones</div>
             </div>
             <div className="mt-2">
-              <Bar pct={vals.pct} color="linear-gradient(90deg,#0EA572,#0EA572)" height={6} />
+              <Bar pct={vals.pct} color="linear-gradient(90deg,#16A34A,#16A34A)" height={6} />
             </div>
           </div>
         </div>

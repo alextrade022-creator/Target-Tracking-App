@@ -5,10 +5,10 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        // Satoshi = body/UI, Montserrat = labels/numbers/uppercase, Poppins = headings.
-        sans: ['Satoshi', 'system-ui', 'sans-serif'],
-        mono: ['Montserrat', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        head: ['Poppins', 'system-ui', 'sans-serif'],
+        // Inter = body/UI/labels/numbers, Plus Jakarta Sans = headings.
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        mono: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        head: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'],
       },
       colors: {
         // Theme-aware neutrals — resolved from CSS variables so they flip
@@ -27,16 +27,16 @@ export default {
         hair: 'rgb(var(--hair-rgb) / <alpha-value>)',
         // Supporting tint — soft backgrounds, tags, hover states (theme-aware).
         tint: 'var(--tint)',
-        // Text placed on the bright accent (buttons, chips, ticks) — dark green for contrast.
-        onaccent: '#06231B',
-        // Primary brand accent (green) — buttons, links, highlights. Same in both themes.
-        teal: '#0EA572',
-        'teal-lt': '#12b981',
-        // Professional categorical accents — all readable on light and dark green.
+        // White text on the primary blue accent (buttons, active tabs, ticks).
+        onaccent: '#FFFFFF',
+        // Primary brand accent (royal blue) — buttons, links, active states.
+        teal: '#2563EB',
+        'teal-lt': '#3B82F6',
+        // Professional categorical accents — all readable on light and navy.
         orange: '#DD6A1E',
         purple: '#7C5AE8',
-        yellow: '#C6871B', // amber (was pale yellow — poor contrast on white)
-        green: '#0EA572',
+        yellow: '#C6871B', // amber
+        green: '#16A34A', // success / money / done
         pink: '#DC4A63', // rose
         blue: '#2D74D8',
         lilac: '#B45FD6',

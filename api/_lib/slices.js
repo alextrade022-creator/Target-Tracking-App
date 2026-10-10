@@ -1,6 +1,6 @@
 // Shared definitions + data-access helpers for the persisted app state.
 //
-// The app persists ten independent "slices" of state. Each slice is stored as a
+// The app persists independent "slices" of state. Each slice is stored as a
 // single document in the `app_state` collection, keyed by its slice name:
 //
 //   { _id: "todos", value: [ ... ], updatedAt: ISODate }
@@ -26,7 +26,20 @@ export const DEFAULTS = Object.freeze({
   goalEdits: {}, // map: goal key -> patch (gedits in the hook)
   branding: [], // personal-branding content pieces
   brandTags: [], // reusable topic tags (name + color) for branding content
-  leads: [], // lead-pipeline / CRM records
+  leads: [], // lead-pipeline / CRM records (legacy)
+  wsBusinesses: [], // workspace: businesses + their departments
+  wsTasks: [], // workspace: tasks (personal + delegated to departments)
+  wsMeetings: [], // workspace: meeting notes
+  pfTxns: [], // personal finance: income/expense transactions
+  pfInvestments: [], // personal finance: investment holdings
+  pfGoals: [], // personal finance: savings goals
+  pfSavings: [], // personal finance: bank/cash balances
+  pfEmis: [], // personal finance: loans & EMIs
+  pfSettings: {}, // personal finance: emergency-fund settings, import history
+  crmLeads: [], // consultation leads (pipeline, follow-ups, activity)
+  crmSettings: {}, // consultation leads: { migrated } flag for the old pipeline import
+  paySales: [], // client payments: sales with plans, payments, reminders, notes
+  paySettings: {}, // client payments: sign-off, UPI, receipt details, counters
 })
 
 export const SLICE_KEYS = Object.keys(DEFAULTS)

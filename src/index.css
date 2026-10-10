@@ -3,54 +3,60 @@
 @tailwind utilities;
 
 /* =====================================================================
-   Theme palettes. Light (green) is the default; [data-theme="dark"] is a
-   deep-green variant. Palette:
-     accent #0EA572 · deep base #0B2E24 · text #1C1C1E · bg #F6F7F5 · tint #BFE3D2
+   Professional navy/blue dashboard theme. Light is the default; dark is a
+   deep-navy variant. Palette:
+     primary #2563EB · success #16A34A · text #1B2A4A · bg #F5F8FC · tint #E8F0FE
    ===================================================================== */
 :root,
 :root[data-theme='light'] {
   color-scheme: light;
-  --bg: #f6f7f5; /* neutral light — page background */
+  --bg: #f5f8fc; /* cool light — page background */
   --panel: #ffffff;
   --surface: #ffffff;
   --card: #ffffff;
-  --fg: #1c1c1e; /* neutral dark — body text */
-  --soft: #22322b; /* strong secondary text (green-tinted) */
-  --mute: #57685f;
-  --mute2: #8a968e;
-  --mute3: #3a4a42;
-  --slate: #66756c;
-  --hair-rgb: 11 46 36; /* deep-base green hairlines on light surfaces */
-  --box-border: #a9c6b9;
-  --tick-done: #8ba393;
-  --cal-out: #b8c8be;
-  --ring: #1c1c1e;
-  --tint: #bfe3d2; /* supporting tint — soft backgrounds, tags, hover */
+  --fg: #1b2a4a; /* navy slate — headings + body */
+  --soft: #33415a; /* strong secondary text */
+  --mute: #64748b; /* slate-500 */
+  --mute2: #94a3b8; /* slate-400 */
+  --mute3: #475569; /* slate-600 */
+  --slate: #7a8aa0;
+  --hair-rgb: 30 41 59; /* cool slate hairlines */
+  --box-border: #cbd5e1;
+  --tick-done: #94a3b8;
+  --cal-out: #cbd5e1;
+  --ring: #1b2a4a;
+  --tint: #e8f0fe; /* soft blue — subtle backgrounds, tags, hover */
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 20px -10px rgba(16, 24, 40, 0.1);
+  --wash: rgba(37, 99, 235, 0.05); /* faint top-page wash */
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg: #0b2e24; /* deep base — dark sections */
-  --panel: #103a2d;
-  --surface: #0e3428;
-  --card: #134838;
-  --fg: #f6f7f5;
-  --soft: #d8e7df;
-  --mute: #8da89b;
-  --mute2: #5e7a6d;
-  --mute3: #b6cbc0;
-  --slate: #7b948a;
-  --hair-rgb: 255 255 255; /* light hairlines on deep green */
-  --box-border: #3e6455;
-  --tick-done: #6f8a7d;
-  --cal-out: #3a5a4d;
-  --ring: #f6f7f5;
-  --tint: #123c2d; /* dark supporting tint */
+  --bg: #0f172a; /* deep navy */
+  --panel: #172136;
+  --surface: #131c2f;
+  --card: #1b2740;
+  --fg: #e9eef7;
+  --soft: #cbd5e1;
+  --mute: #8595ae;
+  --mute2: #5c6f8c;
+  --mute3: #b6c2d6;
+  --slate: #7e8fa8;
+  --hair-rgb: 255 255 255; /* light hairlines on navy */
+  --box-border: #3a4a66;
+  --tick-done: #6b7c97;
+  --cal-out: #3a4a66;
+  --ring: #e9eef7;
+  --tint: #1b2a47;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --wash: rgba(59, 130, 246, 0.08);
 }
 
 @layer base {
   body {
-    @apply bg-ink text-fg font-sans antialiased m-0;
+    @apply text-fg font-sans antialiased m-0;
+    background: linear-gradient(180deg, var(--wash) 0%, transparent 340px), var(--bg);
+    background-attachment: fixed;
   }
   a {
     @apply text-teal no-underline;
@@ -93,10 +99,12 @@
     @apply font-mono;
   }
   .panel {
-    @apply rounded-2xl bg-surface border border-hair/[0.08] overflow-hidden;
+    @apply rounded-2xl bg-surface border border-hair/[0.07] overflow-hidden;
+    box-shadow: var(--shadow-card);
   }
   .stat {
-    @apply rounded-2xl bg-panel border border-hair/[0.08];
+    @apply rounded-2xl bg-panel border border-hair/[0.07];
+    box-shadow: var(--shadow-card);
   }
 }
 

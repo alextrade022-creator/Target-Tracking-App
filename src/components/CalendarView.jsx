@@ -16,7 +16,7 @@ export default function CalendarView({ vals, actions }) {
           </div>
           <div className="flex flex-wrap items-center gap-4">
             <Key color="#C6871B" label="Meeting pending" />
-            <Key color="#0EA572" label="Done" />
+            <Key color="#16A34A" label="Done" />
             <Key color="#DC4A63" label="Cancelled" />
             <Key color="#DD6A1E" label="Todo deadline" />
           </div>
@@ -103,7 +103,7 @@ export default function CalendarView({ vals, actions }) {
                 </div>
                 {m.hasNotes && <div className="mt-2 text-[12.5px] leading-[1.5] text-mute" style={{ textWrap: 'pretty' }}>{m.notes}</div>}
                 <div className="mt-[11px] flex gap-[7px]">
-                  <StatusBtn color="#0EA572" onClick={m.setDone}>Done</StatusBtn>
+                  <StatusBtn color="#16A34A" onClick={m.setDone}>Done</StatusBtn>
                   <StatusBtn color="#C6871B" onClick={m.setPending}>Pending</StatusBtn>
                   <StatusBtn color="#DC4A63" onClick={m.setCancel}>Cancel</StatusBtn>
                 </div>

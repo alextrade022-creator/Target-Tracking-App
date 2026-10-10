@@ -4,9 +4,12 @@
 //   DELETE -> reset the slice to its default
 import { readSlice, writeSlice, deleteSlice, isValidSlice } from '../_lib/slices.js'
 import { sendJson, fail, readBody, applyCors } from '../_lib/http.js'
+import { requireAuth } from '../_lib/auth.js'
 
 export default async function handler(req, res) {
   if (applyCors(req, res)) return
+  if (!requireAuth(req, res)) return
+  res.setHeader('Cache-Control', 'no-store')
   const key = req.query && req.query.key
   if (!isValidSlice(key)) {
     return sendJson(res, 400, { error: 'Unknown slice: ' + key })

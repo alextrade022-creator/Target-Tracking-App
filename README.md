@@ -6,7 +6,7 @@ Refactored from the original single-file Claude Design document into **React + V
 
 ## Features
 
-- **Green brand theme** — accent `#0EA572`, deep base `#0B2E24`, text `#1C1C1E`, page `#F6F7F5`, supporting tint `#BFE3D2`. Fonts: **Poppins** (headings), **Satoshi** (body/UI), **Montserrat** (labels/uppercase/numbers).
+- **Professional navy/blue theme** — primary `#2563EB` (blue), success `#16A34A` (green/money), text `#1B2A4A` (navy slate), page `#F5F8FC`, soft blue tint `#E8F0FE`. White cards with soft shadows and a subtle page wash. Fonts: **Plus Jakarta Sans** (headings) + **Inter** (body/UI/labels/numbers).
 - **Light & dark themes** with a toggle in the top-right of the header (light is the default; dark is a deep-green variant). The choice is saved to `localStorage` and applied before first paint (no flash). The theme is driven by CSS variables, so every surface, text and hairline flips consistently; the brand accent stays constant.
 - **Responsive** from phone to wide desktop. Wide tables (the monthly roadmap, the calendar grid, the target editor, the report tables) scroll horizontally on small screens; multi-column sections collapse to fewer columns.
 
@@ -47,6 +47,26 @@ MONGODB_DB_NAME=target_tracker
 
 These are **server-only**. Do **not** prefix them with `VITE_` — anything `VITE_*` is
 bundled into the frontend and would leak your credentials.
+
+## Login
+
+The app and its API are protected by a single user ID and password.
+
+1. In the project folder run `npm run set-login`. It asks for a user ID and a password
+   (typed hidden, at least 10 characters) and writes three server-only values to `.env`:
+   - `APP_USER` — the user ID
+   - `APP_PASSWORD_HASH` — a one-way scrypt hash (the password itself is never stored)
+   - `AUTH_SECRET` — a random key that signs login cookies
+2. Restart `npm run dev` and sign in.
+
+Run `npm run set-login` again any time to change the password; that signs out every
+device. Sessions last 30 days, in an HttpOnly, SameSite=Strict cookie (Secure on HTTPS).
+After 5 wrong attempts from one IP, login is locked for 15 minutes. Every `/api/state`
+call needs a valid session; `/api/health` shows only connection status when signed out.
+
+**On Vercel:** add the same three variables (copy them from `.env`) under
+Project → Settings → Environment Variables, alongside `MONGODB_URI` and `MONGODB_DB_NAME`.
+Never prefix them with `VITE_`.
 
 ## Local development
 

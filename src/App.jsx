@@ -1,32 +1,49 @@
+import { useWorkspace } from './ws/useWorkspace'
 import { useTargetTracker } from './hooks/useTargetTracker'
 import { useTheme } from './hooks/useTheme'
-import Header from './components/Header'
-import Dashboard from './components/Dashboard'
-import TodoBoard from './components/TodoBoard'
-import CalendarView from './components/CalendarView'
-import Notes from './components/Notes'
+import Shell from './ws/Shell'
+import Today from './ws/Today'
+import Tasks from './ws/Tasks'
+import Meetings from './ws/Meetings'
+import CalendarPage from './ws/CalendarPage'
+import Settings from './ws/Settings'
+import { PageHeader } from './ws/ui'
 import Branding from './components/Branding'
-import Leads from './components/Leads'
-import Report from './components/Report'
+import Finance from './pf/Finance'
+import { usePersonalFinance } from './pf/usePersonalFinance'
+import Leads from './crm/Leads'
+import { useLeads } from './crm/useLeads'
+import Payments from './pay/Payments'
+import { usePayments } from './pay/usePayments'
 
 export default function App() {
-  const { vals, actions } = useTargetTracker()
+  const ws = useWorkspace()
+  // The personal-branding module keeps its existing content/tag logic.
+  const legacy = useTargetTracker()
+  const pf = usePersonalFinance()
+  const crm = useLeads()
+  const pay = usePayments()
   const { theme, toggle } = useTheme()
+  const page = ws.state.page
 
   return (
-    <div
-      id="app-root"
-      className="mx-auto box-border w-full max-w-[1600px] px-4 pb-16 pt-6 text-fg sm:px-6 lg:px-11 lg:pt-11 print:p-0"
-    >
-      {!vals.printing && <Header vals={vals} goPage={actions.goPage} theme={theme} toggleTheme={toggle} />}
-
-      {vals.page === 'dash' && <Dashboard vals={vals} actions={actions} />}
-      {vals.page === 'todo' && <TodoBoard vals={vals} actions={actions} />}
-      {vals.page === 'cal' && <CalendarView vals={vals} actions={actions} />}
-      {vals.page === 'notes' && <Notes vals={vals} actions={actions} />}
-      {vals.page === 'branding' && <Branding vals={vals} actions={actions} />}
-      {vals.page === 'leads' && <Leads vals={vals} actions={actions} />}
-      {vals.page === 'report' && <Report vals={vals} actions={actions} />}
-    </div>
+    <Shell ws={ws} theme={theme} toggleTheme={toggle}>
+      {page === 'today' && <Today ws={ws} crm={crm} pay={pay} />}
+      {page === 'tasks' && <Tasks ws={ws} />}
+      {page === 'meetings' && <Meetings ws={ws} />}
+      {page === 'calendar' && <CalendarPage ws={ws} />}
+      {page === 'settings' && <Settings ws={ws} />}
+      {page === 'finance' && <Finance pf={pf} />}
+      {page === 'leads' && <Leads crm={crm} ws={ws} pay={pay} />}
+      {page === 'payments' && <Payments pay={pay} />}
+      {page === 'branding' && (
+        <>
+          <PageHeader title="Personal branding" subtitle="Plan, shoot, edit and post your content." />
+          <div className="-mt-7">
+            <Branding vals={legacy.vals} actions={legacy.actions} />
+          </div>
+        </>
+      )}
+    </Shell>
   )
 }

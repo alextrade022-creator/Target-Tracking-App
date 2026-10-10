@@ -12,9 +12,12 @@ import express from 'express'
 import stateIndex from '../api/state/index.js'
 import stateKey from '../api/state/[key].js'
 import health from '../api/health.js'
+import login from '../api/auth/login.js'
+import logout from '../api/auth/logout.js'
+import session from '../api/auth/session.js'
 
 const app = express()
-app.use(express.json({ limit: '2mb' }))
+app.use(express.json({ limit: '10mb' }))
 
 // Adapt an (req, res) handler and surface async errors as 500s.
 const wrap = (h) => (req, res) => {
@@ -27,6 +30,9 @@ const wrap = (h) => (req, res) => {
 
 // app.all so preflight OPTIONS reaches the handler (it sets CORS + replies 204).
 app.all('/api/health', wrap(health))
+app.all('/api/auth/login', wrap(login))
+app.all('/api/auth/logout', wrap(logout))
+app.all('/api/auth/session', wrap(session))
 app.all('/api/state', wrap(stateIndex))
 // Vercel exposes the dynamic segment as req.query.key; mirror that for Express.
 app.all('/api/state/:key', (req, res) => {

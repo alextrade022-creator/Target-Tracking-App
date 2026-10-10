@@ -4,15 +4,19 @@
 
 // Apply CORS headers and short-circuit preflight (OPTIONS) requests.
 // Returns true if the request was fully handled (preflight) and the caller
-// should stop. Allowed origin defaults to "*" (this API stores no per-user
-// secrets and uses no cookies); set CORS_ALLOW_ORIGIN to lock it to one origin.
+// should stop. The app and API share one origin (Vite proxy locally, Vercel in
+// production), so no CORS headers are sent by default — other websites can't
+// call the API. Set CORS_ALLOW_ORIGIN to one exact origin only if you need it.
 export function applyCors(req, res) {
-  const origin = process.env.CORS_ALLOW_ORIGIN || '*'
-  res.setHeader('Access-Control-Allow-Origin', origin)
-  res.setHeader('Vary', 'Origin')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, DELETE, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept')
-  res.setHeader('Access-Control-Max-Age', '86400')
+  const allowed = process.env.CORS_ALLOW_ORIGIN || ''
+  if (allowed && allowed !== '*' && req.headers?.origin === allowed) {
+    res.setHeader('Access-Control-Allow-Origin', allowed)
+    res.setHeader('Access-Control-Allow-Credentials', 'true')
+    res.setHeader('Vary', 'Origin')
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept')
+    res.setHeader('Access-Control-Max-Age', '86400')
+  }
   if (req.method === 'OPTIONS') {
     res.status(204).end()
     return true
@@ -31,7 +35,8 @@ export function fail(res, err) {
   }
   // eslint-disable-next-line no-console
   console.error('[api] error:', err)
-  return sendJson(res, 500, { error: 'Internal error', detail: String((err && err.message) || err) })
+  // Details stay in the server log; the response doesn't reveal internals.
+  return sendJson(res, 500, { error: 'Internal error' })
 }
 
 // req.body is already parsed by Vercel (JSON) and by express.json() in dev.

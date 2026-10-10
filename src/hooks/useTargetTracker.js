@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CONFIG } from '../config'
 import {
   MONTHS, FULL, NOW, GOALS, WEEKLY, STAGES, DUE_ISO, PALETTE,
-  MONTH_NAMES, DOW, BRAND_STAGES, PLATFORMS, DEPARTMENTS, LEAD_STAGES, LEAD_SUBS,
+  MONTH_NAMES, DOW, BRAND_STAGES, PLATFORMS, BRAND_FORMATS, DEPARTMENTS, LEAD_STAGES, LEAD_SUBS,
 } from '../lib/constants'
 import { iso, fmt, pretty, todayLabel } from '../lib/helpers'
 import { getState, putSlice } from '../lib/api'
@@ -42,7 +42,8 @@ const initialState = () => ({
   draft: { goal: 'edudot', month: NOW, week: 'ms', text: '' },
   tdraft: { title: '', who: '', from: iso(new Date()), due: '', details: '' },
   mdraft: { title: '', who: '', date: '2026-09-02', time: '10:00', notes: '' },
-  bdraft: { hook: '', body: '', cta: '' },
+  bdraft: { hook: '', body: '', cta: '', format: 'short' },
+  brandFilter: 'all', // 'all' | 'short' | 'long'
   tagDraft: { name: '', color: PALETTE[0] },
 })
 
@@ -151,12 +152,16 @@ export function useTargetTracker() {
       if (!hook && !body && !cta) return {} // nothing written — don't add an empty piece
       const item = {
         id: 'b' + Date.now(), hook, body, cta,
+        format: d.format || 'short',
         shoot: false, edit: false, post: false,
         platforms: [], tags: [], postedDate: '', createdAt: Date.now(),
       }
-      return { branding: (s.branding || []).concat([item]), bdraft: { hook: '', body: '', cta: '' } }
+      // keep the chosen format so consecutive adds of the same type are quick
+      return { branding: (s.branding || []).concat([item]), bdraft: { hook: '', body: '', cta: '', format: d.format || 'short' } }
     })
   }, [update])
+
+  const setBrandFilter = useCallback((brandFilter) => update({ brandFilter }), [update])
 
   const patchBranding = useCallback((id, patch) => {
     update((s) => ({ branding: (s.branding || []).map((b) => (b.id === id ? { ...b, ...patch } : b)) }))
@@ -426,7 +431,7 @@ export function useTargetTracker() {
       removeTodo, archiveTodo, restoreArchived, dropArchived, editGoal, addGoal,
       removeGoal, addMeeting, patchMeeting, removeMeeting, shiftMonth, setNotes,
       resetProgress, exportPdf, goPage, setSel, setFilter, setRepMonth, restoreAll,
-      setB, addBranding, patchBranding, toggleBrandingStage, toggleBrandingPlatform,
+      setB, setBrandFilter, addBranding, patchBranding, toggleBrandingStage, toggleBrandingPlatform,
       setBrandingDate, removeBranding,
       setTagDraft, addBrandTag, editBrandTag, removeBrandTag, toggleBrandingTag,
       setLeadView, setLeadDraft, setLeadFilter, clearLeadFilters, addLead, patchLead,
@@ -488,7 +493,7 @@ function computeVals(st, a) {
   })
 
   const nameOf = (k) => (ALL.find((g) => g && g.k === k) || {}).name || k || 'N/A'
-  const colorOf = (k) => (ALL.find((g) => g && g.k === k) || {}).color || '#0EA572'
+  const colorOf = (k) => (ALL.find((g) => g && g.k === k) || {}).color || '#16A34A'
   const txt = (id, fallback) => (editsMap[id] != null ? editsMap[id] : fallback)
 
   let allDone = 0
@@ -512,8 +517,8 @@ function computeVals(st, a) {
         if (isDone) { gd++; monthDone[mi]++ }
         return {
           id: o.id, t: o.t, toggle: () => a.toggle(o.id),
-          chipBg: o.custom ? 'rgba(14,165,114,.10)' : isDone ? 'rgb(var(--hair-rgb) / .03)' : 'rgb(var(--hair-rgb) / .055)',
-          chipBorder: o.custom ? 'rgba(14,165,114,.35)' : isDone ? 'rgb(var(--hair-rgb) / .05)' : 'rgb(var(--hair-rgb) / .09)',
+          chipBg: o.custom ? 'rgba(22,163,74,.10)' : isDone ? 'rgb(var(--hair-rgb) / .03)' : 'rgb(var(--hair-rgb) / .055)',
+          chipBorder: o.custom ? 'rgba(22,163,74,.35)' : isDone ? 'rgb(var(--hair-rgb) / .05)' : 'rgb(var(--hair-rgb) / .09)',
           ...box(isDone, g.color),
         }
       })
@@ -555,7 +560,7 @@ function computeVals(st, a) {
     const list = rows.map((o) => {
       const isDone = !!done[o.id]
       if (isDone) d++
-      return { id: o.id, text: o.text, toggle: () => a.toggle(o.id), ...box(isDone, o.custom ? '#0EA572' : '#0EA572') }
+      return { id: o.id, text: o.text, toggle: () => a.toggle(o.id), ...box(isDone, o.custom ? '#16A34A' : '#16A34A') }
     })
     wd += d; wt += rows.length
     return { label: 'WEEK ' + (wi + 1), tasks: list, ratio: d + '/' + rows.length, pct: rows.length ? Math.round((d / rows.length) * 100) : 0 }
@@ -610,7 +615,7 @@ function computeVals(st, a) {
       wkRaw.push({
         id: o.id, text: o.text, month: m.label + " '" + m.yr,
         tag: 'WEEK ' + (o.wi + 1) + (o.custom ? ' · ADDED' : ''),
-        color: o.custom ? colorOf(o.goal) : '#0EA572',
+        color: o.custom ? colorOf(o.goal) : '#16A34A',
       }),
     )
   })
@@ -707,7 +712,7 @@ function computeVals(st, a) {
   /* ---- calendar ---- */
   const ST = {
     pending: { l: 'Pending', c: '#C6871B', b: 'rgba(198,135,27,.16)' },
-    done: { l: 'Done', c: '#0EA572', b: 'rgba(14,165,114,.16)' },
+    done: { l: 'Done', c: '#16A34A', b: 'rgba(22,163,74,.16)' },
     cancelled: { l: 'Cancelled', c: '#DC4A63', b: 'rgba(220,74,99,.14)' },
   }
   const first = new Date(st.calY, st.calM, 1)
@@ -731,7 +736,7 @@ function computeVals(st, a) {
     })
     todosArr.filter((t) => t?.due === key).forEach((t) =>
       items.push({
-        label: '☑ ' + na(t?.title), color: t?.status === 'done' ? '#0EA572' : '#DD6A1E',
+        label: '☑ ' + na(t?.title), color: t?.status === 'done' ? '#16A34A' : '#DD6A1E',
         bg: 'rgb(var(--hair-rgb) / .06)', strike: t?.status === 'done',
       }),
     )
@@ -741,7 +746,7 @@ function computeVals(st, a) {
       more: items.length > 4 ? '+' + (items.length - 4) + ' more' : '',
       numColor: out ? 'var(--cal-out)' : key === todayIso ? '#0A0E14' : 'var(--soft)',
       numBg: key === todayIso ? '#C6871B' : 'transparent',
-      bg: key === st.calSel ? 'rgba(14,165,114,.09)' : out ? 'rgb(var(--hair-rgb) / .012)' : 'transparent',
+      bg: key === st.calSel ? 'rgba(22,163,74,.09)' : out ? 'rgb(var(--hair-rgb) / .012)' : 'transparent',
       select: () => a.selectDay(key),
     })
   }
@@ -765,7 +770,7 @@ function computeVals(st, a) {
   const dayTodos = todosArr.filter((t) => t?.due === st.calSel).map((t) => ({
     title: na(t?.title), who: na(t?.who),
     statusLabel: t?.status === 'done' ? 'Done' : t?.status === 'prog' ? 'In progress' : 'Todo',
-    statusColor: t?.status === 'done' ? '#0EA572' : t?.status === 'prog' ? '#C6871B' : '#DD6A1E',
+    statusColor: t?.status === 'done' ? '#16A34A' : t?.status === 'prog' ? '#C6871B' : '#DD6A1E',
   }))
 
   const selParts = (st.calSel || '').split('-')
@@ -782,8 +787,11 @@ function computeVals(st, a) {
   // Ordering (top → bottom): fully done (shoot+edit+post) > shoot+edit > shoot > none.
   // Weight post>edit>shoot so more finished pieces float up; newest first within a tier.
   const brandRank = (b) => (b?.post ? 4 : 0) + (b?.edit ? 2 : 0) + (b?.shoot ? 1 : 0)
+  const bFilter = st.brandFilter || 'all'
+  const fmtDef = (k) => BRAND_FORMATS.find((f) => f.k === k) || BRAND_FORMATS[0]
   const branding = brandingArr
     .slice()
+    .filter((b) => bFilter === 'all' || (b?.format || 'short') === bFilter)
     .sort((x, y) => brandRank(y) - brandRank(x) || (y?.createdAt || 0) - (x?.createdAt || 0))
     .map((b) => {
       const shoot = !!b?.shoot
@@ -802,6 +810,7 @@ function computeVals(st, a) {
         hasHook: !!b?.hook, hasBody: !!b?.body, hasCta: !!b?.cta,
         shoot, edit, post, complete, stageDone,
         statusLabel: complete ? 'Completed' : stageDone === 0 ? 'Not started' : stageDone + '/3 done',
+        format: b?.format || 'short', formatLabel: fmtDef(b?.format).label, formatColor: fmtDef(b?.format).color,
         stages: BRAND_STAGES.map((s) => ({
           k: s.k, label: s.label, color: s.color, on: !!b?.[s.k],
           toggle: () => a.toggleBrandingStage(b?.id, s.k),
@@ -812,14 +821,14 @@ function computeVals(st, a) {
         })),
         // every library tag as a toggle (on = assigned to this content)
         tagChips: brandTagsArr.map((t) => ({
-          id: t?.id, name: na(t?.name), color: t?.color || '#0EA572', on: tagIds.includes(t?.id),
+          id: t?.id, name: na(t?.name), color: t?.color || '#16A34A', on: tagIds.includes(t?.id),
           toggle: () => a.toggleBrandingTag(b?.id, t?.id),
         })),
         // just the assigned tags, for an at-a-glance read
         assignedTags: tagIds
           .map((id) => brandTagsArr.find((t) => t?.id === id))
           .filter(Boolean)
-          .map((t) => ({ id: t?.id, name: na(t?.name), color: t?.color || '#0EA572' })),
+          .map((t) => ({ id: t?.id, name: na(t?.name), color: t?.color || '#16A34A' })),
         postedDate: b?.postedDate || '',
         postedLabel: b?.postedDate ? pretty(b.postedDate) : 'N/A',
         setDate: (e) => a.setBrandingDate(b?.id, e.target.value),
@@ -837,7 +846,7 @@ function computeVals(st, a) {
   const brandTags = brandTagsArr.map((t) => ({
     id: t?.id,
     name: t?.name ?? '',
-    color: t?.color || '#0EA572',
+    color: t?.color || '#16A34A',
     edit: (patch) => a.editBrandTag(t?.id, patch),
     remove: () => a.removeBrandTag(t?.id),
   }))
@@ -922,6 +931,13 @@ function computeVals(st, a) {
 
   return {
     branding, brandingStats, bdraft: st.bdraft,
+    brandFilter: st.brandFilter,
+    brandFormats: BRAND_FORMATS.map((f) => ({ k: f.k, label: f.label, color: f.color })),
+    brandCounts: {
+      all: brandingArr.length,
+      short: brandingArr.filter((b) => (b?.format || 'short') === 'short').length,
+      long: brandingArr.filter((b) => (b?.format || 'short') === 'long').length,
+    },
     brandTags, tagDraft: st.tagDraft,
     // lead pipeline
     leadView: st.leadView, leadDraft: st.leadDraft, leadFilters: st.leadFilters,
