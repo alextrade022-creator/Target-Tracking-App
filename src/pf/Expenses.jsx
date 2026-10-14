@@ -3,7 +3,7 @@ import { cn, iso, pretty } from '../lib/helpers'
 import { Section, Empty, Label } from '../ws/ui'
 import { Stat, Bar, Chip } from './ui'
 import ImportDialog from './ImportDialog'
-import { inr, num, arr, monthLabel, monthTotals, categoryTotals, catDef, catsFor, autoCategory, EXPENSE_CATS, INCOME_CATS } from './lib'
+import { inr, num, arr, monthLabel, monthTotals, categoryTotals, catDef, catsFor, autoCategory, matchLoan, EXPENSE_CATS, INCOME_CATS } from './lib'
 
 export default function Expenses({ pf }) {
   const { state: s, actions: a } = pf
@@ -50,7 +50,7 @@ export default function Expenses({ pf }) {
         />
       </div>
 
-      <AddTransaction onAdd={(t) => a.add('txns', t)} defaultDate={ym === iso(new Date()).slice(0, 7) ? iso(new Date()) : ym + '-01'} />
+      <AddTransaction loans={s.loans} onAdd={(t) => a.add('txns', t)} defaultDate={ym === iso(new Date()).slice(0, 7) ? iso(new Date()) : ym + '-01'} />
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_300px]">
         <section className="panel min-w-0">
@@ -69,7 +69,7 @@ export default function Expenses({ pf }) {
             </select>
           </div>
           {list.length === 0 && <Empty>No transactions for {monthLabel(ym)}. Add one above or import a statement.</Empty>}
-          {list.slice(0, limit).map((t) => <TxnRow key={t.id} t={t} a={a} />)}
+          {list.slice(0, limit).map((t) => <TxnRow key={t.id} t={t} a={a} loans={s.loans} />)}
           {list.length > limit && (
             <button type="button" onClick={() => setLimit(limit + 100)} className="w-full py-3 text-[13px] font-medium text-teal hover:bg-hair/[0.03]">
               Show more ({list.length - limit} left)
@@ -139,8 +139,9 @@ function ImportRow({ b, pf }) {
   )
 }
 
-function TxnRow({ t, a }) {
+function TxnRow({ t, a, loans }) {
   const income = t.type === 'income'
+  const emi = !income && t.category === 'emi' && arr(loans).length > 0
   return (
     <div className="group flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-hair/[0.06] px-5 py-2.5 last:border-b-0">
       <div className="w-[70px] flex-none text-[12px] text-mute">{t.date ? pretty(t.date) : 'N/A'}</div>
@@ -153,14 +154,20 @@ function TxnRow({ t, a }) {
           onChange={(e) => a.patch('txns', t.id, { note: e.target.value })}
         />
       </div>
-      <select
-        className="select w-[170px] flex-none py-1.5 text-[12px]"
-        value={t.category || ''}
-        onChange={(e) => a.patch('txns', t.id, { category: e.target.value })}
-        style={{ color: catDef(t.category).color }}
-      >
-        {catsFor(t.type).map((c) => <option key={c.k} value={c.k}>{c.label}</option>)}
-      </select>
+      <div className="flex w-[190px] flex-none flex-col gap-1">
+        <select
+          className="select py-1.5 text-[12px]"
+          value={t.category || ''}
+          onChange={(e) => a.patch('txns', t.id, e.target.value === 'emi'
+            ? { category: 'emi', loanId: t.loanId || matchLoan(t, loans) }
+            : { category: e.target.value, loanId: '' })}
+          style={{ color: catDef(t.category).color }}
+          aria-label="Category"
+        >
+          {catsFor(t.type).map((c) => <option key={c.k} value={c.k}>{c.label}</option>)}
+        </select>
+        {emi && <LoanPicker loans={loans} value={t.loanId || ''} onChange={(loanId) => a.patch('txns', t.id, { loanId })} />}
+      </div>
       <button
         type="button"
         onClick={() => a.flipType(t.id)}
@@ -184,32 +191,55 @@ function TxnRow({ t, a }) {
   )
 }
 
-function AddTransaction({ onAdd, defaultDate }) {
-  const blank = { date: defaultDate, desc: '', amount: '', type: 'expense', category: 'other', note: '' }
+/* "Which loan?" for an EMI payment. Links it to a loan in Loans & EMIs. */
+function LoanPicker({ loans, value, onChange, className = 'py-1.5 text-[12px]' }) {
+  return (
+    <select
+      className={cn('select', className, !value && 'text-yellow')}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      aria-label="Which loan?"
+      title="Which loan is this EMI for?"
+    >
+      <option value="">Which loan? (not linked)</option>
+      {arr(loans).map((l) => <option key={l.id} value={l.id}>↳ {l.name || 'Loan'}{l.lender ? ' · ' + l.lender : ''}</option>)}
+    </select>
+  )
+}
+
+function AddTransaction({ onAdd, defaultDate, loans }) {
+  const blank = { date: defaultDate, desc: '', amount: '', type: 'expense', category: 'other', note: '', loanId: '' }
   const [v, setV] = useState(blank)
   const [touched, setTouched] = useState(false) // category picked by hand?
+  const [loanTouched, setLoanTouched] = useState(false) // loan picked by hand?
 
   const set = (p) => {
     setV((prev) => {
       const next = { ...prev, ...p }
       if ('type' in p && p.type !== prev.type) next.category = autoCategory(next.desc, next.type)
       else if (!touched && 'desc' in p) next.category = autoCategory(next.desc, next.type)
+      // EMI payment: suggest the loan from the amount / lender until one is picked by hand
+      if (next.type === 'expense' && next.category === 'emi') {
+        if (!loanTouched && !('loanId' in p)) next.loanId = matchLoan({ desc: next.desc, amount: num(next.amount) }, loans)
+      } else next.loanId = ''
       return next
     })
     if ('type' in p) setTouched(false)
   }
+  const isEmi = v.type === 'expense' && v.category === 'emi' && arr(loans).length > 0
   const ok = v.desc.trim() && num(v.amount) > 0 && v.date
   const submit = () => {
     if (!ok) return
-    onAdd({ date: v.date, desc: v.desc.trim(), amount: num(v.amount), type: v.type, category: v.category, note: v.note.trim(), source: 'manual' })
+    onAdd({ date: v.date, desc: v.desc.trim(), amount: num(v.amount), type: v.type, category: v.category, note: v.note.trim(), source: 'manual', loanId: isEmi ? v.loanId : '' })
     setV({ ...blank, date: v.date, type: v.type })
     setTouched(false)
+    setLoanTouched(false)
   }
   const enter = (e) => { if (e.key === 'Enter') submit() }
 
   return (
     <Section title="Add a transaction">
-      <div className="grid grid-cols-2 gap-3 px-5 py-4 md:grid-cols-[140px_120px_1fr_130px_190px_auto]">
+      <div className="grid grid-cols-2 items-start gap-3 px-5 py-4 sm:grid-cols-3 xl:grid-cols-[140px_120px_minmax(0,1fr)_130px_220px_auto]">
         <div>
           <Label>Date</Label>
           <input type="date" className="field" value={v.date} onChange={(e) => set({ date: e.target.value })} />
@@ -221,7 +251,7 @@ function AddTransaction({ onAdd, defaultDate }) {
             <option value="income">Income</option>
           </select>
         </div>
-        <div className="col-span-2 md:col-span-1">
+        <div className="col-span-2 sm:col-span-1">
           <Label>Description</Label>
           <input className="field" placeholder="e.g. Swiggy dinner, Salary, Petrol" value={v.desc} onChange={(e) => set({ desc: e.target.value })} onKeyDown={enter} />
         </div>
@@ -234,8 +264,13 @@ function AddTransaction({ onAdd, defaultDate }) {
           <select className="select" value={v.category} onChange={(e) => { setTouched(true); set({ category: e.target.value }) }}>
             {catsFor(v.type).map((c) => <option key={c.k} value={c.k}>{c.label}</option>)}
           </select>
+          {isEmi && (
+            <div className="mt-2">
+              <LoanPicker loans={loans} value={v.loanId} className="py-2 text-[13px]" onChange={(loanId) => { setLoanTouched(true); set({ loanId }) }} />
+            </div>
+          )}
         </div>
-        <div className="col-span-2 flex items-end md:col-span-1">
+        <div className="col-span-2 flex items-end self-start sm:col-span-1 sm:pt-[22px]">
           <button type="button" onClick={submit} disabled={!ok} className="w-full rounded-lg bg-teal px-5 py-2.5 text-[13px] font-semibold text-onaccent hover:bg-teal-lt disabled:opacity-40">
             Add
           </button>

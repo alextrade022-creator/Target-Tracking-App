@@ -3,7 +3,7 @@ import { Section, Empty } from '../ws/ui'
 import { Stat, Bar, Chip } from './ui'
 import {
   inr, sumBy, monthKey, addMonths, monthLabel, monthTotals, categoryTotals, cashflow,
-  emergencyStatus, goalProgress, nextDue, arr,
+  emergencyStatus, goalProgress, nextDue, arr, loanBalance, loanStatus, loanPaidMonths,
 } from './lib'
 
 export default function Overview({ pf }) {
@@ -13,7 +13,7 @@ export default function Overview({ pf }) {
   const prev = monthTotals(s.txns, addMonths(ym, -1))
   const savingsTotal = sumBy(s.savings, 'balance')
   const invCurrent = sumBy(s.investments, 'current')
-  const debt = sumBy(s.loans, 'outstanding')
+  const debt = arr(s.loans).reduce((t, l) => t + loanBalance(l, s.txns).balance, 0)
   const netWorth = savingsTotal + invCurrent - debt
   const commitments = sumBy(s.loans, 'emi') + sumBy(s.investments, 'monthlySip')
   const ef = emergencyStatus(s)
@@ -115,16 +115,19 @@ export default function Overview({ pf }) {
         <Section title="EMIs this month">
           {arr(s.loans).length === 0 && <Empty>No loans added.</Empty>}
           {arr(s.loans).map((l) => {
-            const paid = arr(l.paidMonths).includes(ym)
+            const st = loanStatus(l, s.txns, ym)
+            const paid = st.status === 'paid'
             return (
               <div key={l.id} className="flex items-center justify-between gap-3 border-b border-hair/[0.06] px-5 py-3 last:border-b-0">
                 <div className="min-w-0">
                   <div className="truncate text-[14px] font-medium">{l.name || 'N/A'}</div>
-                  <div className="mt-0.5 text-[12px] text-mute">{paid ? 'Paid' : 'Due ' + pretty(nextDue(l))}</div>
+                  <div className="mt-0.5 text-[12px] text-mute">
+                    {paid ? 'Paid' : st.status === 'part' ? `Part paid ${inr(st.paid)}` : 'Due ' + pretty(nextDue(l, new Date(), loanPaidMonths(l, s.txns)))}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-[14px] font-semibold">{inr(l.emi)}</span>
-                  <Chip tone={paid ? 'green' : 'amber'}>{paid ? 'Paid' : 'Pending'}</Chip>
+                  <Chip tone={paid ? 'green' : 'amber'}>{paid ? 'Paid' : st.status === 'part' ? 'Part paid' : 'Pending'}</Chip>
                 </div>
               </div>
             )

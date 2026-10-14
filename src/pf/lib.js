@@ -185,10 +185,74 @@ export function loanMonthsLeft(l) {
   return Math.ceil(-Math.log(1 - (r * P) / E) / Math.log(1 + r))
 }
 
-export function nextDue(l, now = new Date()) {
+/* ---------- EMI expenses linked to loans ---------- */
+
+/** EMI expenses linked to a loan, oldest first. */
+export const loanPayments = (l, txns) =>
+  arr(txns).filter((t) => t.loanId && t.loanId === l?.id && t.type === 'expense')
+    .sort((a, b) => String(a.date).localeCompare(String(b.date)))
+
+/** Amount paid towards a loan in a month (YYYY-MM) through linked expenses. */
+export const loanPaidIn = (l, txns, ym) =>
+  loanPayments(l, txns).filter((t) => String(t.date).startsWith(ym)).reduce((s, t) => s + num(t.amount), 0)
+
+/** 'paid' | 'part' | 'due' for a month. Paid = ticked by hand, or linked payments cover ~the EMI. */
+export function loanStatus(l, txns, ym) {
+  if (arr(l?.paidMonths).includes(ym)) return { status: 'paid', paid: num(l?.emi), manual: true }
+  const paid = loanPaidIn(l, txns, ym)
+  if (paid > 0 && paid >= num(l?.emi) * 0.95) return { status: 'paid', paid }
+  return { status: paid > 0 ? 'part' : 'due', paid }
+}
+
+/** Every month counted as paid (for the next due date). */
+export function loanPaidMonths(l, txns) {
+  const out = new Set(arr(l?.paidMonths))
+  const months = new Set(loanPayments(l, txns).map((t) => String(t.date).slice(0, 7)))
+  months.forEach((ym) => { if (loanStatus(l, txns, ym).status === 'paid') out.add(ym) })
+  return [...out]
+}
+
+/** Best guess at which loan an EMI payment is for, or ''. */
+export function matchLoan(txn, loans) {
+  const list = arr(loans)
+  if (!list.length) return ''
+  const amt = num(txn?.amount)
+  const byAmount = list.filter((l) => num(l.emi) && Math.abs(amt - num(l.emi)) <= num(l.emi) * 0.03)
+  if (byAmount.length === 1) return byAmount[0].id
+  const text = norm(txn?.desc)
+  const byName = list.filter((l) => [l.lender, l.name, l.kind].some((w) => {
+    const words = norm(w).split(' ').filter((x) => x.length >= 3 && !['loan', 'emi'].includes(x))
+    return words.some((x) => text.includes(x))
+  }))
+  if (byName.length === 1) return byName[0].id
+  return list.length === 1 ? list[0].id : ''
+}
+
+/** Current balance: the outstanding you entered, minus the principal part of every linked
+ *  EMI paid since then. Each month's interest (on the balance at the start of that month)
+ *  is paid first; the rest of the money reduces the loan. */
+export function loanBalance(l, txns) {
+  const asOf = l?.asOf || (l?.createdAt ? iso(new Date(l.createdAt)) : '')
+  const r = num(l?.rate) / 1200
+  let bal = num(l?.outstanding)
+  const monthInterest = {}, interestPaid = {}, rows = []
+  for (const t of loanPayments(l, txns)) {
+    if (asOf && String(t.date) < asOf) continue // already reflected in the outstanding you entered
+    const ym = String(t.date).slice(0, 7)
+    if (monthInterest[ym] === undefined) monthInterest[ym] = Math.round(bal * r)
+    const interest = Math.min(num(t.amount), Math.max(0, monthInterest[ym] - (interestPaid[ym] || 0)))
+    interestPaid[ym] = (interestPaid[ym] || 0) + interest
+    const principal = Math.min(bal, num(t.amount) - interest)
+    bal -= principal
+    rows.push({ t, interest, principal })
+  }
+  return { balance: Math.max(0, Math.round(bal)), rows }
+}
+
+export function nextDue(l, now = new Date(), paidMonths) {
   const day = Math.min(Math.max(Math.round(num(l?.dueDay)) || 1, 1), 31)
   const at = (y, m) => new Date(y, m, Math.min(day, new Date(y, m + 1, 0).getDate()))
-  const paid = arr(l?.paidMonths).includes(monthKey(now))
+  const paid = arr(paidMonths || l?.paidMonths).includes(monthKey(now))
   return iso(paid ? at(now.getFullYear(), now.getMonth() + 1) : at(now.getFullYear(), now.getMonth()))
 }
 

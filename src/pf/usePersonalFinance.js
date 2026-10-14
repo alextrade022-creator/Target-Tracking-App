@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getState, putSlice } from '../lib/api'
 import { uid } from '../ws/lib'
-import { arr, monthKey, addMonths, autoCategory } from './lib'
+import { arr, monthKey, addMonths, autoCategory, matchLoan } from './lib'
 
 // list name -> MongoDB slice
 const LISTS = { txns: 'pfTxns', investments: 'pfInvestments', goals: 'pfGoals', savings: 'pfSavings', loans: 'pfEmis' }
@@ -58,6 +58,7 @@ export function usePersonalFinance() {
   const remove = useCallback((kind, id) => {
     update((p) => {
       const out = { [kind]: arr(p[kind]).filter((x) => x.id !== id) }
+      if (kind === 'loans') out.txns = arr(p.txns).map((t) => (t.loanId === id ? { ...t, loanId: '' } : t))
       if (kind === 'goals') {
         // anything set aside for the deleted goal becomes un-earmarked
         const clear = (x) => (x.purpose === id ? { ...x, purpose: '' } : x)
@@ -75,7 +76,11 @@ export function usePersonalFinance() {
     const batch = uid('b')
     const at = Date.now()
     update((p) => ({
-      txns: arr(p.txns).concat(rows.map(({ row, ...r }, i) => ({ ...r, id: batch + '-' + i, batch, source: 'import', note: '', createdAt: at }))),
+      txns: arr(p.txns).concat(rows.map(({ row, ...r }, i) => ({
+        ...r, id: batch + '-' + i, batch, source: 'import', note: '', createdAt: at,
+        // EMI rows are matched to a loan when the amount or lender makes it clear
+        loanId: r.type === 'expense' && r.category === 'emi' ? matchLoan(r, p.loans) : '',
+      }))),
       settings: {
         ...p.settings,
         imports: [{ id: batch, file: fileName || 'statement', at: new Date().toISOString(), count: rows.length }]
@@ -87,7 +92,7 @@ export function usePersonalFinance() {
   /** Set every transaction from one import to income or expense (re-picking categories). */
   const setBatchType = useCallback((batch, type) => {
     update((p) => ({
-      txns: arr(p.txns).map((t) => (t.batch === batch && t.type !== type ? { ...t, type, category: autoCategory(t.desc, type) } : t)),
+      txns: arr(p.txns).map((t) => (t.batch === batch && t.type !== type ? { ...t, type, category: autoCategory(t.desc, type), loanId: '' } : t)),
     }))
   }, [update])
 
@@ -97,7 +102,7 @@ export function usePersonalFinance() {
       txns: arr(p.txns).map((t) => {
         if (t.id !== id) return t
         const type = t.type === 'income' ? 'expense' : 'income'
-        return { ...t, type, category: autoCategory(t.desc, type) }
+        return { ...t, type, category: autoCategory(t.desc, type), loanId: '' }
       }),
     }))
   }, [update])
