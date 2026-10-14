@@ -95,27 +95,46 @@ export default function Expenses({ pf }) {
 
           {imports.length > 0 && (
             <Section title="Recent imports">
-              {imports.slice(0, 6).map((b) => (
-                <div key={b.id} className="flex items-center justify-between gap-2 border-b border-hair/[0.06] px-5 py-2.5 last:border-b-0">
-                  <div className="min-w-0">
-                    <div className="truncate text-[12.5px] font-medium" title={b.file}>{b.file || 'Statement'}</div>
-                    <div className="text-[11.5px] text-mute2">{b.count} rows · {b.at ? pretty(b.at.slice(0, 10)) : 'N/A'}</div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => { if (window.confirm(`Remove the ${b.count} transactions from "${b.file}"?`)) a.undoImport(b.id) }}
-                    className="text-[12px] font-medium text-mute hover:text-pink"
-                  >
-                    Undo
-                  </button>
-                </div>
-              ))}
+              {imports.slice(0, 6).map((b) => <ImportRow key={b.id} b={b} pf={pf} />)}
             </Section>
           )}
         </div>
       </div>
 
       {showImport && <ImportDialog pf={pf} onClose={() => setShowImport(false)} />}
+    </div>
+  )
+}
+
+/* One past import: how many rows are expenses vs income, switch them all, or undo. */
+function ImportRow({ b, pf }) {
+  const { state: s, actions: a } = pf
+  const [undoing, setUndoing] = useState(false)
+  const mine = (s.txns || []).filter((t) => t && t.batch === b.id)
+  const inc = mine.filter((t) => t.type === 'income').length
+  const exp = mine.length - inc
+  const link = 'text-[12px] font-medium text-teal hover:text-teal-lt'
+  return (
+    <div className="border-b border-hair/[0.06] px-5 py-2.5 last:border-b-0">
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <div className="truncate text-[12.5px] font-medium" title={b.file}>{b.file || 'Statement'}</div>
+          <div className="text-[11.5px] text-mute2">{exp} expense{exp === 1 ? '' : 's'} · {inc} income · {b.at ? pretty(b.at.slice(0, 10)) : 'N/A'}</div>
+        </div>
+        {!undoing && <button type="button" onClick={() => setUndoing(true)} className="text-[12px] font-medium text-mute hover:text-pink">Undo</button>}
+      </div>
+      {undoing ? (
+        <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[12px]">
+          <span className="text-mute">Remove these {mine.length} transactions?</span>
+          <button type="button" onClick={() => a.undoImport(b.id)} className="font-semibold text-pink">Remove</button>
+          <button type="button" onClick={() => setUndoing(false)} className="text-mute hover:text-fg">Keep</button>
+        </div>
+      ) : (
+        <div className="mt-1 flex flex-wrap gap-3">
+          {inc > 0 && <button type="button" onClick={() => a.setBatchType(b.id, 'expense')} className={link}>Set all to expense</button>}
+          {exp > 0 && <button type="button" onClick={() => a.setBatchType(b.id, 'income')} className={link}>Set all to income</button>}
+        </div>
+      )}
     </div>
   )
 }
@@ -142,9 +161,14 @@ function TxnRow({ t, a }) {
       >
         {catsFor(t.type).map((c) => <option key={c.k} value={c.k}>{c.label}</option>)}
       </select>
-      <div className={cn('w-[110px] flex-none text-right text-[14px] font-semibold', income ? 'text-green' : 'text-fg')}>
+      <button
+        type="button"
+        onClick={() => a.flipType(t.id)}
+        title={`Click to switch to ${income ? 'expense' : 'income'}`}
+        className={cn('w-[110px] flex-none rounded-md text-right text-[14px] font-semibold hover:bg-hair/[0.05]', income ? 'text-green' : 'text-fg')}
+      >
         {income ? '+' : '−'}{inr(t.amount)}
-      </div>
+      </button>
       <div className="flex w-[70px] flex-none items-center justify-end gap-1">
         {t.source === 'import' ? <Chip>Import</Chip> : <Chip tone="blue">Manual</Chip>}
         <button

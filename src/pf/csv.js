@@ -97,6 +97,21 @@ export function guessMapping(header) {
   }
 }
 
+/** Best guess at what a file holds: 'mixed' (bank statement), or only 'expense' / 'income'.
+ *  One amount column with no minus signs and no Dr/Cr marks is almost always an expense list. */
+export function guessKind(rows, cfg) {
+  if (cfg.mode === 'type') return 'mixed'
+  if (cfg.mode === 'split') {
+    const both = cfg.debit >= 0 && cfg.credit >= 0 && cfg.debit !== cfg.credit
+    return both ? 'mixed' : 'expense'
+  }
+  for (let i = cfg.headerRow + 1; i < Math.min(rows.length, cfg.headerRow + 400); i++) {
+    const a = parseAmount(cells(rows[i])[cfg.amount])
+    if (a && (a.n < 0 || a.drcr)) return 'mixed'
+  }
+  return 'expense'
+}
+
 const txnKey = (t) =>
   [t.date, Math.round(num(t.amount) * 100), t.type, String(t.desc || '').toLowerCase().replace(/\s+/g, ' ').trim()].join('|')
 
@@ -127,8 +142,12 @@ export function buildImport(rows, cfg, existing = []) {
       }
     }
     if (!amount || !type) { skipped++; continue }
+    // "Expenses only" / "Income only" files: every row is that type.
+    if (cfg.kind === 'expense' || cfg.kind === 'income') type = cfg.kind
+    // A row flipped by hand in the preview.
+    if (cfg.overrides && cfg.overrides[i]) type = cfg.overrides[i]
     const desc = String(r[cfg.desc] ?? '').replace(/\s+/g, ' ').trim() || 'N/A'
-    const t = { date, desc, amount: Math.round(amount * 100) / 100, type, category: autoCategory(desc, type) }
+    const t = { row: i, date, desc, amount: Math.round(amount * 100) / 100, type, category: autoCategory(desc, type) }
     const k = txnKey(t)
     if ((counts.get(k) || 0) > 0) { counts.set(k, counts.get(k) - 1); dupes++; continue }
     fresh.push(t)

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { cn, pretty } from '../lib/helpers'
 import { Label } from '../ws/ui'
 import { Chip } from './ui'
-import { readRows, findHeader, guessMapping, buildImport, cells } from './csv'
+import { readRows, findHeader, guessMapping, guessKind, buildImport, cells } from './csv'
 import { inr, catDef } from './lib'
 
 export default function ImportDialog({ pf, onClose }) {
@@ -22,8 +22,9 @@ export default function ImportDialog({ pf, onClose }) {
       const r = await readRows(f)
       if (!r.length) throw new Error('empty')
       const headerRow = findHeader(r)
+      const map = { headerRow, ...guessMapping(r[headerRow]) }
       setRows(r); setFile(f)
-      setCfg({ headerRow, ...guessMapping(r[headerRow]) })
+      setCfg({ ...map, kind: guessKind(r, map), overrides: {} })
     } catch (e) {
       setErr('Could not read this file. Please use a CSV or Excel (.xlsx / .xls) export from your bank or card.')
     } finally {
@@ -37,8 +38,14 @@ export default function ImportDialog({ pf, onClose }) {
     Array.from({ length: width }, (_, i) => ({ value: i, label: `Column ${i + 1}${header[i] ? ' · ' + String(header[i]).slice(0, 30) : ''}` })),
   )
   const result = useMemo(() => (rows && cfg ? buildImport(rows, cfg, s.txns) : null), [rows, cfg, s.txns])
-  const set = (k, v) => setCfg((c) => ({ ...c, [k]: v }))
-  const setHeaderRow = (n) => setCfg((c) => ({ ...c, headerRow: n, ...guessMapping(n >= 0 ? rows[n] : []), order: c.order }))
+  const set = (k, v) => setCfg((c) => ({ ...c, [k]: v, overrides: {} }))
+  const setHeaderRow = (n) => setCfg((c) => {
+    const map = { ...c, headerRow: n, ...guessMapping(n >= 0 ? rows[n] : []), order: c.order }
+    return { ...map, kind: guessKind(rows, map), overrides: {} }
+  })
+  const flipRow = (t) => setCfg((c) => ({ ...c, overrides: { ...c.overrides, [t.row]: t.type === 'income' ? 'expense' : 'income' } }))
+  const nIncome = (result?.fresh || []).filter((t) => t.type === 'income').length
+  const nExpense = (result?.fresh.length || 0) - nIncome
 
   const doImport = () => {
     if (!result?.fresh.length) return
@@ -85,7 +92,32 @@ export default function ImportDialog({ pf, onClose }) {
           </div>
         ) : (
           <div className="p-6">
-            <div className="mb-1 text-[13.5px] font-medium">1. Check the columns</div>
+            <div className="mb-1 text-[13.5px] font-medium">1. What's in this file?</div>
+            <div className="mb-3 text-[12.5px] text-mute">We guessed from the numbers. Pick the right one if it's wrong.</div>
+            <div className="mb-6 grid grid-cols-1 gap-2 sm:grid-cols-3" role="radiogroup" aria-label="What the file contains">
+              {[
+                ['expense', 'Expenses only', 'Every row is money spent, e.g. an expense sheet or card bill.'],
+                ['income', 'Income only', 'Every row is money received, e.g. salary or client payments.'],
+                ['mixed', 'Both', 'A bank statement with money in and out.'],
+              ].map(([k, t, d]) => (
+                <button
+                  key={k}
+                  type="button"
+                  role="radio"
+                  aria-checked={cfg.kind === k}
+                  onClick={() => set('kind', k)}
+                  className={cn('rounded-xl border px-3.5 py-3 text-left transition-colors', cfg.kind === k ? 'border-teal bg-teal/[0.06]' : 'border-hair/[0.12] hover:border-hair/[0.25]')}
+                >
+                  <span className="flex items-center gap-2 text-[13.5px] font-semibold">
+                    <span className={cn('h-3.5 w-3.5 rounded-full border-2', cfg.kind === k ? 'border-teal bg-teal shadow-[inset_0_0_0_2px_var(--surface)]' : 'border-hair/[0.3]')} />
+                    {t}
+                  </span>
+                  <span className="mt-1 block text-[12px] text-mute">{d}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="mb-1 text-[13.5px] font-medium">2. Check the columns</div>
             <div className="mb-4 text-[12.5px] text-mute">We guessed these from the file. Change any that look wrong.</div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <Pick label="Header row" value={cfg.headerRow} onChange={setHeaderRow}
@@ -112,7 +144,7 @@ export default function ImportDialog({ pf, onClose }) {
                   <Pick label="Amount column" value={cfg.amount} onChange={(v) => set('amount', v)} options={colOpts} />
                   {cfg.mode === 'type' ? (
                     <Pick label="Dr/Cr column" value={cfg.typeCol} onChange={(v) => set('typeCol', v)} options={colOpts} />
-                  ) : (
+                  ) : cfg.kind !== 'mixed' ? null : (
                     <Pick label="How to read amounts" value={cfg.rule} onChange={(v) => set('rule', v)} raw
                       options={[
                         { value: 'sign', label: 'Negative = expense, positive = income' },
@@ -124,28 +156,43 @@ export default function ImportDialog({ pf, onClose }) {
             </div>
 
             <div className="mb-2 mt-6 flex flex-wrap items-center justify-between gap-2">
-              <div className="text-[13.5px] font-medium">2. Preview</div>
+              <div>
+                <div className="text-[13.5px] font-medium">3. Preview</div>
+                <div className="text-[12px] text-mute">Click Expense or Income on a row to switch just that row.</div>
+              </div>
               <div className="flex flex-wrap gap-1.5">
-                <Chip tone="green">{result?.fresh.length || 0} new</Chip>
+                <Chip tone="slate">{nExpense} expense{nExpense === 1 ? '' : 's'}</Chip>
+                <Chip tone="green">{nIncome} income</Chip>
                 {result?.dupes > 0 && <Chip tone="amber">{result.dupes} already imported</Chip>}
                 {result?.skipped > 0 && <Chip>{result.skipped} rows ignored</Chip>}
               </div>
             </div>
-            <div className="overflow-x-auto rounded-xl border border-hair/[0.08]">
-              <table className="w-full min-w-[620px] text-left text-[12.5px]">
-                <thead className="bg-hair/[0.03] text-mute">
+            <div className="max-h-[340px] overflow-auto rounded-xl border border-hair/[0.08]">
+              <table className="w-full min-w-[680px] text-left text-[12.5px]">
+                <thead className="sticky top-0 bg-surface text-mute">
                   <tr>
                     <th className="px-3 py-2 font-medium">Date</th>
                     <th className="px-3 py-2 font-medium">Description</th>
+                    <th className="px-3 py-2 font-medium">Type</th>
                     <th className="px-3 py-2 font-medium">Category</th>
                     <th className="px-3 py-2 text-right font-medium">Amount</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {(result?.fresh || []).slice(0, 8).map((t, i) => (
-                    <tr key={i} className="border-t border-hair/[0.06]">
+                  {(result?.fresh || []).map((t) => (
+                    <tr key={t.row} className="border-t border-hair/[0.06]">
                       <td className="whitespace-nowrap px-3 py-2">{pretty(t.date)}</td>
-                      <td className="max-w-[320px] truncate px-3 py-2" title={t.desc}>{t.desc}</td>
+                      <td className="max-w-[300px] truncate px-3 py-2" title={t.desc}>{t.desc}</td>
+                      <td className="px-3 py-1.5">
+                        <button
+                          type="button"
+                          onClick={() => flipRow(t)}
+                          title={`Switch to ${t.type === 'income' ? 'expense' : 'income'}`}
+                          className={cn('rounded-md px-2 py-0.5 text-[11.5px] font-semibold', t.type === 'income' ? 'bg-green/[0.1] text-green' : 'bg-hair/[0.07] text-soft')}
+                        >
+                          {t.type === 'income' ? 'Income' : 'Expense'} ⇄
+                        </button>
+                      </td>
                       <td className="px-3 py-2" style={{ color: catDef(t.category).color }}>{catDef(t.category).label}</td>
                       <td className={cn('whitespace-nowrap px-3 py-2 text-right font-medium', t.type === 'income' && 'text-green')}>
                         {t.type === 'income' ? '+' : '−'}{inr(t.amount)}
@@ -153,7 +200,7 @@ export default function ImportDialog({ pf, onClose }) {
                     </tr>
                   ))}
                   {!result?.fresh.length && (
-                    <tr><td colSpan={4} className="px-3 py-6 text-center text-mute2">
+                    <tr><td colSpan={5} className="px-3 py-6 text-center text-mute2">
                       {result?.dupes > 0
                         ? 'Everything in this file has already been imported.'
                         : 'No transactions found with these settings. Check the date and amount columns.'}

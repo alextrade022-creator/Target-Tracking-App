@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getState, putSlice } from '../lib/api'
 import { uid } from '../ws/lib'
-import { arr, monthKey, addMonths } from './lib'
+import { arr, monthKey, addMonths, autoCategory } from './lib'
 
 // list name -> MongoDB slice
 const LISTS = { txns: 'pfTxns', investments: 'pfInvestments', goals: 'pfGoals', savings: 'pfSavings', loans: 'pfEmis' }
@@ -75,12 +75,30 @@ export function usePersonalFinance() {
     const batch = uid('b')
     const at = Date.now()
     update((p) => ({
-      txns: arr(p.txns).concat(rows.map((r, i) => ({ ...r, id: batch + '-' + i, batch, source: 'import', note: '', createdAt: at }))),
+      txns: arr(p.txns).concat(rows.map(({ row, ...r }, i) => ({ ...r, id: batch + '-' + i, batch, source: 'import', note: '', createdAt: at }))),
       settings: {
         ...p.settings,
         imports: [{ id: batch, file: fileName || 'statement', at: new Date().toISOString(), count: rows.length }]
           .concat(arr(p.settings?.imports)).slice(0, 30),
       },
+    }))
+  }, [update])
+
+  /** Set every transaction from one import to income or expense (re-picking categories). */
+  const setBatchType = useCallback((batch, type) => {
+    update((p) => ({
+      txns: arr(p.txns).map((t) => (t.batch === batch && t.type !== type ? { ...t, type, category: autoCategory(t.desc, type) } : t)),
+    }))
+  }, [update])
+
+  /** Flip one transaction between income and expense. */
+  const flipType = useCallback((id) => {
+    update((p) => ({
+      txns: arr(p.txns).map((t) => {
+        if (t.id !== id) return t
+        const type = t.type === 'income' ? 'expense' : 'income'
+        return { ...t, type, category: autoCategory(t.desc, type) }
+      }),
     }))
   }, [update])
 
@@ -103,6 +121,6 @@ export function usePersonalFinance() {
 
   return {
     state: s,
-    actions: { setTab, setMonth, shiftMonth, add, patch, remove, setSettings, importTxns, undoImport, toggleLoanPaid },
+    actions: { setTab, setMonth, shiftMonth, add, patch, remove, setSettings, importTxns, undoImport, setBatchType, flipType, toggleLoanPaid },
   }
 }
