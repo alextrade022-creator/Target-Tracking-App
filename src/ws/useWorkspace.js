@@ -88,6 +88,22 @@ export function useWorkspace() {
 
   const removeTask = useCallback((id) => update((p) => ({ tasks: arr(p.tasks).filter((t) => t.id !== id) })), [update])
 
+  /* ---- subtasks: a checklist inside a task, { id, title, done } ---- */
+  const editSubs = useCallback((taskId, fn) => {
+    update((p) => ({ tasks: arr(p.tasks).map((t) => (t.id === taskId ? { ...t, subtasks: fn(arr(t.subtasks)) } : t)) }))
+  }, [update])
+  const addSubtask = useCallback((taskId, title) => {
+    const v = (title || '').trim()
+    if (v) editSubs(taskId, (list) => list.concat([{ id: uid('s'), title: v, done: false }]))
+  }, [editSubs])
+  const toggleSubtask = useCallback((taskId, subId) => {
+    editSubs(taskId, (list) => list.map((x) => (x.id === subId ? { ...x, done: !x.done } : x)))
+  }, [editSubs])
+  const renameSubtask = useCallback((taskId, subId, title) => {
+    editSubs(taskId, (list) => list.map((x) => (x.id === subId ? { ...x, title } : x)))
+  }, [editSubs])
+  const removeSubtask = useCallback((taskId, subId) => editSubs(taskId, (list) => list.filter((x) => x.id !== subId)), [editSubs])
+
   /* ---- meetings ---- */
   // `stay: true` creates the meeting without leaving the current page (used by Leads).
   const addMeeting = useCallback(({ bizId, date, time = '10:00', title = '', attendees = '', agenda = '', leadId = '', stay = false }) => {
@@ -107,11 +123,13 @@ export function useWorkspace() {
     update((p) => ({ meetings: arr(p.meetings).map((m) => (m.id === id ? { ...m, ...patch } : m)) }))
   }, [update])
 
-  const removeMeeting = useCallback((id) => {
+  // withTasks: also delete its action items; otherwise keep them, unlinked.
+  const removeMeeting = useCallback((id, { withTasks = false } = {}) => {
     update((p) => ({
       meetings: arr(p.meetings).filter((m) => m.id !== id),
-      // keep the action items, just unlink them from the deleted meeting
-      tasks: arr(p.tasks).map((t) => (t.meetingId === id ? { ...t, meetingId: '' } : t)),
+      tasks: withTasks
+        ? arr(p.tasks).filter((t) => t.meetingId !== id)
+        : arr(p.tasks).map((t) => (t.meetingId === id ? { ...t, meetingId: '' } : t)),
       activeMeeting: p.activeMeeting === id ? '' : p.activeMeeting,
     }))
   }, [update])
@@ -222,6 +240,7 @@ export function useWorkspace() {
   const actions = {
     go, setBiz, openMeeting, setTaskView, setTaskDept,
     addTask, patchTask, toggleTask, removeTask,
+    addSubtask, toggleSubtask, renameSubtask, removeSubtask,
     addMeeting, patchMeeting, removeMeeting,
     shiftMonth, goToday, selectDay,
     addBusiness, patchBusiness, removeBusiness, addDept, patchDept, removeDept,

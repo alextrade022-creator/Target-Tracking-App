@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { cn, iso, pretty } from '../lib/helpers'
 import { PageHeader, Section, TaskRow, TaskAdder, BizChip, Label, Empty } from './ui'
 
@@ -42,6 +43,7 @@ export default function Meetings({ ws }) {
 
 function MeetingGroup({ title, items, ws, activeId }) {
   const { sel, actions: a } = ws
+  const [confirmId, setConfirmId] = useState('')
   if (items.length === 0) return null
   return (
     <section className="panel">
@@ -49,22 +51,38 @@ function MeetingGroup({ title, items, ws, activeId }) {
       {items.map((m) => {
         const openTasks = sel.allTasks.filter((t) => t.meetingId === m.id && t.status !== 'done').length
         return (
-          <button
+          <div
             key={m.id}
-            type="button"
-            onClick={() => a.openMeeting(m.id)}
-            className={cn(
-              'block w-full border-b border-hair/[0.06] px-4 py-3 text-left last:border-b-0 hover:bg-hair/[0.03]',
-              activeId === m.id && 'bg-teal/[0.07]',
-            )}
+            className={cn('group relative border-b border-hair/[0.06] last:border-b-0', activeId === m.id && 'bg-teal/[0.07]')}
           >
-            <div className="truncate text-[13.5px] font-medium">{m.title || 'Untitled meeting'}</div>
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-[11.5px] text-mute">
-              <span>{m.date ? pretty(m.date) : 'N/A'}{m.time ? ' · ' + m.time : ''}</span>
-              {openTasks > 0 && <span className="font-medium text-yellow">{openTasks} open</span>}
-            </div>
-            <div className="mt-1.5"><BizChip biz={sel.bizMap[m.bizId]} /></div>
-          </button>
+            {confirmId === m.id ? (
+              <ConfirmDelete m={m} ws={ws} onCancel={() => setConfirmId('')} compact />
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => a.openMeeting(m.id)}
+                  className="block w-full px-4 py-3 pr-11 text-left hover:bg-hair/[0.03]"
+                >
+                  <div className="truncate text-[13.5px] font-medium">{m.title || 'Untitled meeting'}</div>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-[11.5px] text-mute">
+                    <span>{m.date ? pretty(m.date) : 'N/A'}{m.time ? ' · ' + m.time : ''}</span>
+                    {openTasks > 0 && <span className="font-medium text-yellow">{openTasks} open</span>}
+                  </div>
+                  <div className="mt-1.5"><BizChip biz={sel.bizMap[m.bizId]} /></div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmId(m.id)}
+                  aria-label={`Delete ${m.title || 'meeting'}`}
+                  title="Delete meeting"
+                  className="absolute right-2.5 top-2.5 rounded-md p-1.5 text-mute2 opacity-60 transition hover:bg-pink/[0.08] hover:text-pink focus:opacity-100 group-hover:opacity-100"
+                >
+                  <TrashIcon />
+                </button>
+              </>
+            )}
+          </div>
         )
       })}
     </section>
@@ -73,6 +91,7 @@ function MeetingGroup({ title, items, ws, activeId }) {
 
 function MeetingDetail({ m, ws }) {
   const { sel, actions: a } = ws
+  const [confirming, setConfirming] = useState(false)
   const patch = (p) => a.patchMeeting(m.id, p)
   const tasks = sel.allTasks.filter((t) => t.meetingId === m.id)
     .sort((x, y) => (x.status === 'done') - (y.status === 'done') || (x.createdAt || 0) - (y.createdAt || 0))
@@ -80,12 +99,24 @@ function MeetingDetail({ m, ws }) {
   return (
     <div className="flex flex-col gap-5">
       <section className="panel p-5">
-        <input
-          className="w-full bg-transparent font-head text-[22px] font-bold tracking-[-0.01em] outline-none placeholder:text-mute2"
-          placeholder="Meeting title"
-          value={m.title || ''}
-          onChange={(e) => patch({ title: e.target.value })}
-        />
+        <div className="flex items-start gap-3">
+          <input
+            className="min-w-0 flex-1 bg-transparent font-head text-[22px] font-bold tracking-[-0.01em] outline-none placeholder:text-mute2"
+            placeholder="Meeting title"
+            value={m.title || ''}
+            onChange={(e) => patch({ title: e.target.value })}
+          />
+          {!confirming && (
+            <button
+              type="button"
+              onClick={() => setConfirming(true)}
+              className="flex flex-none items-center gap-1.5 rounded-lg border border-hair/[0.14] px-3 py-1.5 text-[12.5px] font-medium text-mute hover:border-pink/50 hover:bg-pink/[0.06] hover:text-pink"
+            >
+              <TrashIcon /> Delete
+            </button>
+          )}
+        </div>
+        {confirming && <div className="mt-3"><ConfirmDelete m={m} ws={ws} onCancel={() => setConfirming(false)} /></div>}
         <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
           <div>
             <Label>Business</Label>
@@ -113,15 +144,6 @@ function MeetingDetail({ m, ws }) {
         <div className="mt-3">
           <TextBox label="Notes" value={m.notes} onChange={(v) => patch({ notes: v })} rows={6} />
         </div>
-        <div className="mt-4 flex justify-end">
-          <button
-            type="button"
-            onClick={() => { if (window.confirm('Delete this meeting? Its action items are kept.')) a.removeMeeting(m.id) }}
-            className="text-[12.5px] font-medium text-mute hover:text-pink"
-          >
-            Delete meeting
-          </button>
-        </div>
       </section>
 
       <Section title="Action items" right={<span className="text-[12px] text-mute2">{tasks.filter((t) => t.status !== 'done').length} open</span>}>
@@ -146,5 +168,39 @@ function TextBox({ label, value, onChange, rows = 4 }) {
         onChange={(e) => onChange(e.target.value)}
       />
     </div>
+  )
+}
+
+/* Inline "are you sure?" — offers to keep or delete the meeting's action items. */
+function ConfirmDelete({ m, ws, onCancel, compact = false }) {
+  const { sel, actions: a } = ws
+  const linked = sel.allTasks.filter((t) => t.meetingId === m.id).length
+  const btn = 'rounded-lg px-3 py-1.5 text-[12.5px] font-semibold'
+  return (
+    <div role="alertdialog" aria-label="Delete meeting" className={cn('rounded-xl bg-pink/[0.07] text-[13px]', compact ? 'm-2 px-3 py-2.5' : 'px-4 py-3')}>
+      <div className="font-medium">Delete “{m.title || 'Untitled meeting'}”?</div>
+      <div className="mt-0.5 text-[12px] text-mute">
+        {linked ? `It has ${linked} action item${linked === 1 ? '' : 's'}.` : 'This can\'t be undone.'}
+      </div>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {linked > 0 && (
+          <button type="button" onClick={() => a.removeMeeting(m.id)} className={cn(btn, 'border border-pink/40 text-pink hover:bg-pink/[0.08]')}>
+            Delete, keep action items
+          </button>
+        )}
+        <button type="button" autoFocus onClick={() => a.removeMeeting(m.id, { withTasks: true })} className={cn(btn, 'bg-pink text-onaccent hover:opacity-90')}>
+          {linked ? 'Delete everything' : 'Delete'}
+        </button>
+        <button type="button" onClick={onCancel} className={cn(btn, 'font-medium text-mute hover:text-fg')}>Cancel</button>
+      </div>
+    </div>
+  )
+}
+
+function TrashIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6" />
+    </svg>
   )
 }
