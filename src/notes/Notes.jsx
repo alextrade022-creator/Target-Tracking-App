@@ -104,6 +104,9 @@ function NoteEditor({ n, nb, ws }) {
   const [confirm, setConfirm] = useState(false)
   const [newBlock, setNewBlock] = useState('')
   const title = useRef(null)
+  const menuRef = useRef(null)
+  // Bring the menu into view when it opens near the bottom of the screen.
+  useEffect(() => { if (menu) menuRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }) }, [menu])
   const blocks = arr(n.blocks)
   const journal = arr(n.tags).includes('Journal')
 
@@ -170,7 +173,8 @@ function NoteEditor({ n, nb, ws }) {
           + Add block
         </button>
         {menu && (
-          <div className="absolute inset-x-0 top-[calc(100%+6px)] z-10 grid grid-cols-1 gap-1 rounded-xl border border-hair/[0.1] bg-surface p-1.5 shadow-2xl sm:grid-cols-2 lg:grid-cols-3"
+          // In the page flow, not floating: the note panel clips anything that overflows it.
+          <div ref={menuRef} className="mt-2 grid grid-cols-1 gap-1 rounded-xl border border-hair/[0.1] bg-surface p-1.5 shadow-lg sm:grid-cols-2 lg:grid-cols-3"
             onKeyDown={(e) => { if (e.key === 'Escape') setMenu(false) }}>
             {ADD.map(([k, t, d]) => (
               <button key={k} type="button" onClick={() => { setNewBlock(a.addBlock(n.id, k)); setMenu(false) }} className="rounded-lg px-3 py-2 text-left hover:bg-hair/[0.05]">
