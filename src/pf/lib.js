@@ -197,7 +197,10 @@ export const loanPaidIn = (l, txns, ym) =>
   loanPayments(l, txns).filter((t) => String(t.date).startsWith(ym)).reduce((s, t) => s + num(t.amount), 0)
 
 /** 'paid' | 'part' | 'due' for a month. Paid = ticked by hand, or linked payments cover ~the EMI. */
+export const isFlexible = (l) => l?.mode === 'flexible'
+
 export function loanStatus(l, txns, ym) {
+  if (isFlexible(l)) return { status: 'flex', paid: loanPaidIn(l, txns, ym) }
   if (arr(l?.paidMonths).includes(ym)) return { status: 'paid', paid: num(l?.emi), manual: true }
   const paid = loanPaidIn(l, txns, ym)
   if (paid > 0 && paid >= num(l?.emi) * 0.95) return { status: 'paid', paid }
@@ -228,26 +231,64 @@ export function matchLoan(txn, loans) {
   return list.length === 1 ? list[0].id : ''
 }
 
-/** Current balance: the outstanding you entered, minus the principal part of every linked
- *  EMI paid since then. Each month's interest (on the balance at the start of that month)
- *  is paid first; the rest of the money reduces the loan. */
-export function loanBalance(l, txns) {
-  const asOf = l?.asOf || (l?.createdAt ? iso(new Date(l.createdAt)) : '')
-  const r = num(l?.rate) / 1200
-  let bal = num(l?.outstanding)
-  const monthInterest = {}, interestPaid = {}, rows = []
-  for (const t of loanPayments(l, txns)) {
-    if (asOf && String(t.date) < asOf) continue // already reflected in the outstanding you entered
-    const ym = String(t.date).slice(0, 7)
-    if (monthInterest[ym] === undefined) monthInterest[ym] = Math.round(bal * r)
-    const interest = Math.min(num(t.amount), Math.max(0, monthInterest[ym] - (interestPaid[ym] || 0)))
-    interestPaid[ym] = (interestPaid[ym] || 0) + interest
-    const principal = Math.min(bal, num(t.amount) - interest)
-    bal -= principal
-    rows.push({ t, interest, principal })
+/** Where a loan stood when it was added (or last re-entered): balance, plus principal
+ *  and interest already paid before that date. Older loans only had `outstanding`. */
+export function loanOpening(l) {
+  const o = l?.opening || {}
+  return {
+    date: o.date || l?.asOf || (l?.createdAt ? iso(new Date(l.createdAt)) : ''),
+    balance: num(o.balance ?? l?.outstanding),
+    principal: num(o.principal),
+    interest: num(o.interest),
   }
-  return { balance: Math.max(0, Math.round(bal)), rows }
 }
+
+/** Payment ledger of a loan, built from the expenses linked to it (oldest first).
+ *  Principal / interest come from what you typed (loanPrincipal / loanInterest);
+ *  payments without a typed split are estimated (interest charged once a month on
+ *  the balance) and flagged. loanFunded lists other people's share of a payment. */
+export function loanLedger(l, txns) {
+  const open = loanOpening(l)
+  const r = num(l?.rate) / 1200
+  let bal = open.balance
+  const monthInterest = {}, interestPaid = {}, rows = []
+  const by = {}
+  for (const t of loanPayments(l, txns)) {
+    if (open.date && String(t.date) < open.date) continue // already reflected in the opening balance
+    const amount = num(t.amount)
+    const ym = String(t.date).slice(0, 7)
+    let principal, interest
+    const typed = t.loanPrincipal != null || t.loanInterest != null
+    if (typed) {
+      principal = num(t.loanPrincipal)
+      interest = num(t.loanInterest)
+    } else {
+      if (monthInterest[ym] === undefined) monthInterest[ym] = Math.round(bal * r)
+      interest = Math.min(amount, Math.max(0, monthInterest[ym] - (interestPaid[ym] || 0)))
+      principal = Math.min(bal, amount - interest)
+    }
+    interestPaid[ym] = (interestPaid[ym] || 0) + interest
+    bal = Math.max(0, bal - principal)
+    const others = arr(t.loanFunded).filter((f) => num(f.amount) > 0)
+    const mine = Math.max(0, amount - others.reduce((s, f) => s + num(f.amount), 0))
+    const funded = (mine ? [{ who: 'me', amount: mine }] : []).concat(others.map((f) => ({ who: f.who, amount: num(f.amount) })))
+    funded.forEach((f) => { by[f.who] = (by[f.who] || 0) + f.amount })
+    rows.push({ t, principal, interest, estimated: !typed, funded, after: Math.round(bal) })
+  }
+  const principalSince = rows.reduce((s, x) => s + x.principal, 0)
+  const interestSince = rows.reduce((s, x) => s + x.interest, 0)
+  return {
+    open, rows, by,
+    balance: Math.max(0, Math.round(bal)),
+    principalSince, interestSince,
+    principalPaid: open.principal + principalSince,
+    interestPaid: open.interest + interestSince,
+    estimated: rows.filter((x) => x.estimated).length,
+  }
+}
+
+/** Current balance after linked payments (kept for callers that only need the number). */
+export const loanBalance = (l, txns) => loanLedger(l, txns)
 
 export function nextDue(l, now = new Date(), paidMonths) {
   const day = Math.min(Math.max(Math.round(num(l?.dueDay)) || 1, 1), 31)

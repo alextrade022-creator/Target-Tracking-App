@@ -122,12 +122,16 @@ export default function Overview({ pf }) {
                 <div className="min-w-0">
                   <div className="truncate text-[14px] font-medium">{l.name || 'N/A'}</div>
                   <div className="mt-0.5 text-[12px] text-mute">
-                    {paid ? 'Paid' : st.status === 'part' ? `Part paid ${inr(st.paid)}` : 'Due ' + pretty(nextDue(l, new Date(), loanPaidMonths(l, s.txns)))}
+                    {st.status === 'flex'
+                      ? (st.paid ? `Flexible · paid ${inr(st.paid)} this month` : 'Flexible payments')
+                      : paid ? 'Paid' : st.status === 'part' ? `Part paid ${inr(st.paid)}` : 'Due ' + pretty(nextDue(l, new Date(), loanPaidMonths(l, s.txns)))}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[14px] font-semibold">{inr(l.emi)}</span>
-                  <Chip tone={paid ? 'green' : 'amber'}>{paid ? 'Paid' : st.status === 'part' ? 'Part paid' : 'Pending'}</Chip>
+                  {st.status !== 'flex' && <span className="text-[14px] font-semibold">{inr(l.emi)}</span>}
+                  {st.status === 'flex'
+                    ? <Chip tone={st.paid ? 'green' : 'slate'}>{st.paid ? 'Paid' : 'Flexible'}</Chip>
+                    : <Chip tone={paid ? 'green' : 'amber'}>{paid ? 'Paid' : st.status === 'part' ? 'Part paid' : 'Pending'}</Chip>}
                 </div>
               </div>
             )

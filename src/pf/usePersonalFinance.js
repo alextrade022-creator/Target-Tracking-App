@@ -5,7 +5,7 @@ import { arr, monthKey, addMonths, autoCategory, matchLoan } from './lib'
 
 // list name -> MongoDB slice
 const LISTS = { txns: 'pfTxns', investments: 'pfInvestments', goals: 'pfGoals', savings: 'pfSavings', loans: 'pfEmis' }
-const DEFAULT_SETTINGS = { emergencyMonths: 6, expenseOverride: 0, imports: [] }
+const DEFAULT_SETTINGS = { emergencyMonths: 6, expenseOverride: 0, imports: [], contributors: [] }
 const obj = (v) => (v && typeof v === 'object' && !Array.isArray(v) ? v : {})
 
 export function usePersonalFinance() {
@@ -14,6 +14,7 @@ export function usePersonalFinance() {
     settings: DEFAULT_SETTINGS,
     tab: 'overview',
     month: monthKey(),
+    loanId: '', // loan page open in Loans & EMIs
   })
   const update = useCallback((p) => setS((prev) => ({ ...prev, ...(typeof p === 'function' ? p(prev) : p) })), [])
 
@@ -41,7 +42,23 @@ export function usePersonalFinance() {
   useEffect(() => persist(LISTS.loans, s.loans), [s.loans, persist])
   useEffect(() => persist('pfSettings', s.settings), [s.settings, persist])
 
-  const setTab = useCallback((tab) => update({ tab }), [update])
+  const setTab = useCallback((tab) => update({ tab, loanId: '' }), [update])
+  const openLoan = useCallback((loanId) => update({ tab: 'loans', loanId: loanId || '' }), [update])
+
+  /* People who sometimes give money towards a loan ("Me" is implicit). */
+  const addContributor = useCallback((name) => {
+    const n = (name || '').trim()
+    if (!n) return ''
+    const id = uid('c')
+    update((p) => ({ settings: { ...p.settings, contributors: arr(p.settings?.contributors).concat([{ id, name: n }]) } }))
+    return id
+  }, [update])
+  const renameContributor = useCallback((id, name) => {
+    update((p) => ({ settings: { ...p.settings, contributors: arr(p.settings?.contributors).map((c) => (c.id === id ? { ...c, name } : c)) } }))
+  }, [update])
+  const removeContributor = useCallback((id) => {
+    update((p) => ({ settings: { ...p.settings, contributors: arr(p.settings?.contributors).filter((c) => c.id !== id) } }))
+  }, [update])
   const setMonth = useCallback((month) => update({ month }), [update])
   const shiftMonth = useCallback((k) => update((p) => ({ month: addMonths(p.month, k) })), [update])
 
@@ -126,6 +143,6 @@ export function usePersonalFinance() {
 
   return {
     state: s,
-    actions: { setTab, setMonth, shiftMonth, add, patch, remove, setSettings, importTxns, undoImport, setBatchType, flipType, toggleLoanPaid },
+    actions: { setTab, openLoan, addContributor, renameContributor, removeContributor, setMonth, shiftMonth, add, patch, remove, setSettings, importTxns, undoImport, setBatchType, flipType, toggleLoanPaid },
   }
 }
