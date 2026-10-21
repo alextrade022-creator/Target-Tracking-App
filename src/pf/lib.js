@@ -352,12 +352,17 @@ export function investmentEffect(t, id) {
 
 export function liveAccount(acc, txns) {
   const base = balanceBase(acc)
-  let delta = 0, count = 0
+  let delta = 0, count = 0, older = 0, oldest = ''
   for (const t of arr(txns)) {
     const e = accountEffect(t, acc.id)
-    if (e && after(t, base)) { delta += e; count++ }
+    if (!e) continue
+    if (after(t, base)) { delta += e; count++ }
+    else { older++; if (!oldest || String(t.date) < oldest) oldest = String(t.date) }
   }
-  return { ...acc, baseBalance: num(acc.balance), balance: Math.round((num(acc.balance) + delta) * 100) / 100, moves: count, since: base.asOf }
+  return {
+    ...acc, baseBalance: num(acc.balance), balance: Math.round((num(acc.balance) + delta) * 100) / 100,
+    moves: count, since: base.asOf, older, oldest,
+  }
 }
 
 export function liveInvestment(inv, txns) {

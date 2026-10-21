@@ -16,14 +16,16 @@ export default function Assets({ pf }) {
   const savingsFields = [
     { k: 'name', label: 'Account name', required: true, placeholder: 'e.g. HDFC savings' },
     { k: 'kind', label: 'Type', type: 'select', options: SAVINGS_KINDS, default: SAVINGS_KINDS[0] },
-    { k: 'balance', label: 'Balance now (₹)', type: 'number', required: true, hint: 'Your actual balance today. Later income, expenses and transfers update it.' },
+    { k: 'balance', label: 'Balance (₹)', type: 'number', required: true },
+    { k: 'asOf', label: 'Balance on date', type: 'date', hint: 'Transactions from this date on change the balance. Pick an earlier date if you import older statements.' },
     { k: 'purpose', label: 'Set aside for', type: 'select', options: purpose, hint: 'Counts toward that goal / emergency fund' },
   ]
   const invFields = [
     { k: 'name', label: 'Name', required: true, placeholder: 'e.g. Parag Parikh Flexi Cap' },
     { k: 'kind', label: 'Type', type: 'select', options: INVEST_KINDS, default: INVEST_KINDS[0] },
     { k: 'invested', label: 'Amount invested (₹)', type: 'number', required: true },
-    { k: 'current', label: 'Current value (₹)', type: 'number', required: true, hint: 'Today’s value. Transfers into it add to both amounts.' },
+    { k: 'current', label: 'Current value (₹)', type: 'number', required: true, hint: 'Transfers into it add to both amounts.' },
+    { k: 'asOf', label: 'Value on date', type: 'date' },
     { k: 'monthlySip', label: 'Monthly SIP (₹)', type: 'number', placeholder: '0 if none' },
     { k: 'purpose', label: 'Set aside for', type: 'select', options: purpose },
   ]
@@ -64,19 +66,29 @@ export default function Assets({ pf }) {
 
       <Section title="Savings & bank accounts" right={edit !== 'new-savings' && <AddLink onClick={() => setEdit('new-savings')}>+ Add account</AddLink>}>
         {edit === 'new-savings' && (
-          <RecordForm fields={savingsFields} submitLabel="Add account"
-            onSave={(v) => { a.add('savings', { ...v, updatedAt: iso(new Date()) }); setEdit('') }}
+          <RecordForm fields={savingsFields} submitLabel="Add account" initial={{ asOf: iso(new Date()) }}
+            onSave={(v) => { a.add('savings', v); setEdit('') }}
             onCancel={() => setEdit('')} />
         )}
         {arr(s.savings).length === 0 && edit !== 'new-savings' && <Empty>No accounts yet.</Empty>}
         {arr(s.savings).map((x) => (edit === x.id ? (
-          <RecordForm key={x.id} fields={savingsFields} initial={x}
-            onSave={(v) => { a.patch('savings', x.id, { ...v, updatedAt: iso(new Date()) }); setEdit('') }}
+          <RecordForm key={x.id} fields={savingsFields} initial={{ ...x, asOf: iso(new Date()) }}
+            onSave={(v) => { a.patch('savings', x.id, v); setEdit('') }}
             onCancel={() => setEdit('')} />
         ) : (
           <ItemRow key={x.id}
             title={x.name || 'N/A'}
-            meta={<>{x.kind || 'N/A'}{x.updatedAt && <span className="text-mute2">· balance set {pretty(x.updatedAt)}</span>}{moved(x)}{purposeChip(x.purpose)}</>}
+            meta={<>
+              {x.kind || 'N/A'}
+              {x.since && <span className="text-mute2">· balance as of {pretty(x.since)}</span>}
+              {moved(x)}
+              {x.older > 0 && (
+                <button type="button" onClick={() => setEdit(x.id)} className="text-yellow underline-offset-2 hover:underline" title="These are dated before the balance date, so they are treated as already included in it. Edit the account and pick an earlier 'Balance on date' to count them.">
+                  · {x.older} older transaction{x.older === 1 ? '' : 's'} not counted
+                </button>
+              )}
+              {purposeChip(x.purpose)}
+            </>}
             value={inr(x.balance)}
             extra={<button type="button" onClick={() => setTransfer({ from: { kind: 'account', id: x.id } })} className="rounded-md px-2 py-1 text-[12px] font-medium text-teal hover:bg-teal/[0.06]">⇄ Transfer</button>}
             onEdit={() => setEdit(x.id)}
@@ -103,7 +115,7 @@ export default function Assets({ pf }) {
           </div>
         )}
         {edit === 'new-inv' && (
-          <RecordForm fields={invFields} submitLabel="Add investment"
+          <RecordForm fields={invFields} submitLabel="Add investment" initial={{ asOf: iso(new Date()) }}
             onSave={(v) => { a.add('investments', v); setEdit('') }}
             onCancel={() => setEdit('')} />
         )}
@@ -111,7 +123,7 @@ export default function Assets({ pf }) {
         {arr(s.investments).map((x) => {
           if (edit === x.id) {
             return (
-              <RecordForm key={x.id} fields={invFields} initial={x}
+              <RecordForm key={x.id} fields={invFields} initial={{ ...x, asOf: iso(new Date()) }}
                 onSave={(v) => { a.patch('investments', x.id, v); setEdit('') }}
                 onCancel={() => setEdit('')} />
             )

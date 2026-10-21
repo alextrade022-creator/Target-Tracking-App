@@ -15,6 +15,7 @@ export default function ImportDialog({ pf, onClose }) {
   const [drag, setDrag] = useState(false)
   const [done, setDone] = useState(null)
   const accounts = s.savings || []
+  const [countOlder, setCountOlder] = useState(false)
   const [account, setAccount] = useState(() => (accounts.some((x) => x.id === s.settings?.lastAccount) ? s.settings.lastAccount : accounts[0]?.id || ''))
 
   const load = async (f) => {
@@ -39,6 +40,7 @@ export default function ImportDialog({ pf, onClose }) {
   const colOpts = [{ value: -1, label: '— none —' }].concat(
     Array.from({ length: width }, (_, i) => ({ value: i, label: `Column ${i + 1}${header[i] ? ' · ' + String(header[i]).slice(0, 30) : ''}` })),
   )
+  const acc = accounts.find((x) => x.id === account)
   const result = useMemo(() => (rows && cfg ? buildImport(rows, cfg, s.txns) : null), [rows, cfg, s.txns])
   const set = (k, v) => setCfg((c) => ({ ...c, [k]: v, overrides: {} }))
   const setHeaderRow = (n) => setCfg((c) => {
@@ -46,12 +48,16 @@ export default function ImportDialog({ pf, onClose }) {
     return { ...map, kind: guessKind(rows, map), overrides: {} }
   })
   const flipRow = (t) => setCfg((c) => ({ ...c, overrides: { ...c.overrides, [t.row]: t.type === 'income' ? 'expense' : 'income' } }))
+  const oldestRow = (result?.fresh || []).reduce((m, t) => (!m || t.date < m ? t.date : m), '')
+  const olderRows = acc?.since ? (result?.fresh || []).filter((t) => t.date < acc.since).length : 0
   const nIncome = (result?.fresh || []).filter((t) => t.type === 'income').length
   const nExpense = (result?.fresh.length || 0) - nIncome
 
   const doImport = () => {
     if (!result?.fresh.length) return
     a.importTxns(result.fresh, file?.name, account)
+    // "My balance was before these": move the account's balance date back to the oldest row.
+    if (account && countOlder && oldestRow) a.patch('savings', account, { balance: acc.baseBalance, asOf: oldestRow })
     setDone({ count: result.fresh.length, dupes: result.dupes, skipped: result.skipped })
   }
 
@@ -102,6 +108,15 @@ export default function ImportDialog({ pf, onClose }) {
                   {accounts.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
                 </select>
                 <span className="text-[12px] text-mute">Its balance will move with these transactions.</span>
+                {acc && olderRows > 0 && (
+                  <div className="basis-full rounded-lg bg-yellow/[0.1] px-3 py-2 text-[12.5px]">
+                    <b>{olderRows} of these are dated before {pretty(acc.since)}</b>, when {acc.name}'s balance ({inr(acc.baseBalance)}) was entered, so they'd be treated as already included in it.
+                    <label className="mt-1.5 flex items-center gap-2 font-medium">
+                      <input type="checkbox" checked={countOlder} onChange={(e) => setCountOlder(e.target.checked)} />
+                      My {inr(acc.baseBalance)} was the balance before these. Count them (balance date becomes {pretty(oldestRow)}).
+                    </label>
+                  </div>
+                )}
               </div>
             )}
 

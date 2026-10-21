@@ -66,9 +66,15 @@ export function usePersonalFinance() {
   const shiftMonth = useCallback((k) => update((p) => ({ month: addMonths(p.month, k) })), [update])
 
   // A balance / value typed in by hand becomes the new starting point (see balanceBase in lib.js).
+  // asOf in the change = "this balance was true on that date". Today (or no date) means
+  // "right now": only transactions recorded after this moment count. A past date means
+  // the balance was true at the start of that day, so every transaction from it counts.
   const stampBase = (kind, change) => {
     const typed = kind === 'savings' ? 'balance' in change : kind === 'investments' ? 'invested' in change || 'current' in change : false
-    return typed ? { ...change, asOf: iso(new Date()), balanceAt: Date.now(), ...(kind === 'savings' ? { updatedAt: iso(new Date()) } : {}) } : change
+    if (!typed && !('asOf' in change)) return change
+    const today = iso(new Date())
+    const asOf = change.asOf && change.asOf <= today ? change.asOf : today
+    return { ...change, asOf, balanceAt: asOf === today ? Date.now() : 0, ...(kind === 'savings' ? { updatedAt: asOf } : {}) }
   }
 
   const add = useCallback((kind, item) => {
