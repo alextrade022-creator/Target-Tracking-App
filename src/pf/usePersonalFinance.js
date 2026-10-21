@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getState, putSlice } from '../lib/api'
 import { uid } from '../ws/lib'
 import { iso } from '../lib/helpers'
-import { arr, monthKey, addMonths, autoCategory, matchLoan, liveAccount, liveInvestment } from './lib'
+import { arr, monthKey, addMonths, autoCategory, matchLoan, liveAccount, liveInvestment, normalizeTxn } from './lib'
 
 // list name -> MongoDB slice
 const LISTS = { txns: 'pfTxns', investments: 'pfInvestments', goals: 'pfGoals', savings: 'pfSavings', loans: 'pfEmis' }
@@ -25,7 +25,7 @@ export function usePersonalFinance() {
     getState().then((d) => {
       if (alive && d) {
         update({
-          txns: arr(d.pfTxns), investments: arr(d.pfInvestments), goals: arr(d.pfGoals),
+          txns: arr(d.pfTxns).map(normalizeTxn), investments: arr(d.pfInvestments), goals: arr(d.pfGoals),
           savings: arr(d.pfSavings), loans: arr(d.pfEmis),
           settings: { ...DEFAULT_SETTINGS, ...obj(d.pfSettings) },
         })
@@ -74,7 +74,8 @@ export function usePersonalFinance() {
   const add = useCallback((kind, item) => {
     const id = uid(kind.slice(0, 2))
     update((p) => {
-      const out = { [kind]: arr(p[kind]).concat([{ ...stampBase(kind, item), id, createdAt: Date.now() }]) }
+      const row = { ...stampBase(kind, item), id, createdAt: Date.now() }
+      const out = { [kind]: arr(p[kind]).concat([kind === 'txns' ? normalizeTxn(row) : row]) }
       // remember the account used last, to suggest it next time
       if (kind === 'txns' && item.account) out.settings = { ...p.settings, lastAccount: item.account }
       return out
@@ -83,7 +84,11 @@ export function usePersonalFinance() {
   }, [update])
 
   const patch = useCallback((kind, id, change) => {
-    update((p) => ({ [kind]: arr(p[kind]).map((x) => (x.id === id ? { ...x, ...stampBase(kind, change) } : x)) }))
+    update((p) => ({ [kind]: arr(p[kind]).map((x) => {
+      if (x.id !== id) return x
+      const next = { ...x, ...stampBase(kind, change) }
+      return kind === 'txns' ? normalizeTxn(next) : next
+    }) }))
   }, [update])
 
   const remove = useCallback((kind, id) => {

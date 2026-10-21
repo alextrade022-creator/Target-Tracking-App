@@ -4,6 +4,7 @@ import { Section, Empty, Label } from '../ws/ui'
 import { Stat, Bar, Chip } from './ui'
 import ImportDialog from './ImportDialog'
 import { AccountPicker, InvestmentPicker, TransferDialog } from './Accounts'
+import { Modal } from '../crm/bits'
 import { inr, num, arr, monthLabel, monthTotals, categoryTotals, catDef, catsFor, autoCategory, matchLoan, endpointName, EXPENSE_CATS, INCOME_CATS } from './lib'
 
 export default function Expenses({ pf }) {
@@ -14,6 +15,7 @@ export default function Expenses({ pf }) {
   const [limit, setLimit] = useState(100)
   const [showImport, setShowImport] = useState(false)
   const [showTransfer, setShowTransfer] = useState(false)
+  const [editing, setEditing] = useState(null) // transaction being edited
   const ym = s.month
   const tot = monthTotals(s.txns, ym)
   const cats = categoryTotals(s.txns, ym)
@@ -78,8 +80,8 @@ export default function Expenses({ pf }) {
           </div>
           {list.length === 0 && <Empty>No transactions for {monthLabel(ym)}. Add one above or import a statement.</Empty>}
           {list.slice(0, limit).map((t) => (t.type === 'transfer'
-            ? <TransferRow key={t.id} t={t} a={a} s={s} />
-            : <TxnRow key={t.id} t={t} a={a} loans={s.loans} accounts={s.savings} investments={s.investments} />))}
+            ? <TransferRow key={t.id} t={t} a={a} s={s} onEdit={() => setEditing(t)} />
+            : <TxnRow key={t.id} t={t} a={a} loans={s.loans} accounts={s.savings} investments={s.investments} onEdit={() => setEditing(t)} />))}
           {list.length > limit && (
             <button type="button" onClick={() => setLimit(limit + 100)} className="w-full py-3 text-[13px] font-medium text-teal hover:bg-hair/[0.03]">
               Show more ({list.length - limit} left)
@@ -113,17 +115,20 @@ export default function Expenses({ pf }) {
 
       {showImport && <ImportDialog pf={pf} onClose={() => setShowImport(false)} />}
       {showTransfer && <TransferDialog pf={pf} onClose={() => setShowTransfer(false)} />}
+      {editing && (editing.type === 'transfer'
+        ? <TransferDialog pf={pf} txn={editing} onClose={() => setEditing(null)} />
+        : <EditTransaction pf={pf} t={editing} onClose={() => setEditing(null)} />)}
     </div>
   )
 }
 
 /* A transfer between your own accounts / investments: not income, not spending. */
-function TransferRow({ t, a, s }) {
+function TransferRow({ t, a, s, onEdit }) {
   const [confirm, setConfirm] = useState(false)
   return (
-    <div className="group flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-hair/[0.06] px-5 py-2.5 last:border-b-0">
-      <div className="w-[70px] flex-none text-[12px] text-mute">{t.date ? pretty(t.date) : 'N/A'}</div>
-      <div className="min-w-[160px] flex-1">
+    <div className="group grid grid-cols-[64px_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 border-b border-hair/[0.06] px-5 py-3 last:border-b-0 xl:grid-cols-[64px_minmax(0,1fr)_200px_auto]">
+      <div className="pt-0.5 text-[12px] text-mute">{t.date ? pretty(t.date) : 'N/A'}</div>
+      <div className="min-w-0">
         <div className="truncate text-[13.5px]">
           <span className="mr-1.5 text-mute">⇄</span>
           {endpointName(t.from, s.savings, s.investments)} → {endpointName(t.to, s.savings, s.investments)}
@@ -135,16 +140,31 @@ function TransferRow({ t, a, s }) {
           onChange={(e) => a.patch('txns', t.id, { note: e.target.value })}
         />
       </div>
-      <div className="w-[190px] flex-none"><Chip tone={t.to?.kind === 'investment' ? 'blue' : 'slate'}>{t.to?.kind === 'investment' ? 'Invested' : 'Transfer'}</Chip></div>
-      <div className="w-[110px] flex-none text-right text-[14px] font-semibold text-mute">{inr(t.amount)}</div>
-      <div className="flex w-[70px] flex-none items-center justify-end gap-1">
+      <RowEnd amount={<span className="text-mute">{inr(t.amount)}</span>} confirm={confirm} setConfirm={setConfirm} onEdit={onEdit} onDelete={() => a.remove('txns', t.id)} what="transfer" />
+      <div className="col-span-2 col-start-2 xl:col-span-1 xl:col-start-3 xl:row-start-1">
+        <Chip tone={t.to?.kind === 'investment' ? 'blue' : 'slate'}>{t.to?.kind === 'investment' ? 'Invested' : 'Transfer'}</Chip>
+      </div>
+    </div>
+  )
+}
+
+/* Right end of a row: amount, then source chip, edit and delete (delete asks first). */
+function RowEnd({ amount, chip = null, confirm, setConfirm, onEdit, onDelete, what }) {
+  return (
+    <div className="flex flex-col items-end gap-1 xl:col-start-4 xl:row-start-1">
+      <div className="whitespace-nowrap text-[14px] font-semibold tabular-nums">{amount}</div>
+      <div className="flex flex-nowrap items-center gap-1">
         {confirm ? (
           <span className="flex gap-2 text-[12px]">
-            <button type="button" onClick={() => a.remove('txns', t.id)} className="font-semibold text-pink">Delete</button>
+            <button type="button" onClick={onDelete} className="font-semibold text-pink">Delete</button>
             <button type="button" onClick={() => setConfirm(false)} className="text-mute">Keep</button>
           </span>
         ) : (
-          <button type="button" onClick={() => setConfirm(true)} aria-label="Delete transfer" className="px-1 text-[16px] leading-none text-mute2 opacity-0 hover:text-pink group-hover:opacity-100 focus:opacity-100">×</button>
+          <>
+            {chip}
+            <button type="button" onClick={onEdit} aria-label={`Edit ${what}`} title="Edit" className="rounded px-1 text-[13px] text-mute2 hover:text-teal">✎</button>
+            <button type="button" onClick={() => setConfirm(true)} aria-label={`Delete ${what}`} title="Delete" className="px-1 text-[16px] leading-none text-mute2 hover:text-pink">×</button>
+          </>
         )}
       </div>
     </div>
@@ -184,14 +204,15 @@ function ImportRow({ b, pf }) {
   )
 }
 
-function TxnRow({ t, a, loans, accounts, investments }) {
+function TxnRow({ t, a, loans, accounts, investments, onEdit }) {
+  const [confirm, setConfirm] = useState(false)
   const income = t.type === 'income'
   const emi = !income && t.category === 'emi' && arr(loans).length > 0
   const invest = !income && t.category === 'investment' && arr(investments).length > 0
   return (
-    <div className="group flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-hair/[0.06] px-5 py-2.5 last:border-b-0">
-      <div className="w-[70px] flex-none text-[12px] text-mute">{t.date ? pretty(t.date) : 'N/A'}</div>
-      <div className="min-w-[160px] flex-1">
+    <div className="group grid grid-cols-[64px_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 border-b border-hair/[0.06] px-5 py-3 last:border-b-0 xl:grid-cols-[64px_minmax(0,1fr)_200px_auto]">
+      <div className="pt-0.5 text-[12px] text-mute">{t.date ? pretty(t.date) : 'N/A'}</div>
+      <div className="min-w-0">
         <div className="truncate text-[13.5px]" title={t.desc}>{t.desc || 'N/A'}</div>
         <input
           className="mt-0.5 w-full bg-transparent text-[12px] text-mute outline-none placeholder:text-mute2/70"
@@ -200,7 +221,16 @@ function TxnRow({ t, a, loans, accounts, investments }) {
           onChange={(e) => a.patch('txns', t.id, { note: e.target.value })}
         />
       </div>
-      <div className="flex w-[190px] flex-none flex-col gap-1">
+      <RowEnd
+        amount={<span className={income ? 'text-green' : 'text-fg'}>{income ? '+' : '−'}{inr(t.amount)}</span>}
+        chip={t.source === 'import' ? <Chip>Import</Chip> : <Chip tone="blue">Manual</Chip>}
+        confirm={confirm}
+        setConfirm={setConfirm}
+        onEdit={onEdit}
+        onDelete={() => a.remove('txns', t.id)}
+        what="transaction"
+      />
+      <div className="col-span-2 col-start-2 grid grid-cols-1 gap-1 sm:grid-cols-2 xl:col-span-1 xl:col-start-3 xl:row-start-1 xl:grid-cols-1">
         <select
           className="select py-1.5 text-[12px]"
           value={t.category || ''}
@@ -215,25 +245,6 @@ function TxnRow({ t, a, loans, accounts, investments }) {
         {emi && <LoanPicker loans={loans} value={t.loanId || ''} onChange={(loanId) => a.patch('txns', t.id, { loanId })} />}
         {invest && <InvestmentPicker investments={investments} value={t.investmentId || ''} onChange={(investmentId) => a.patch('txns', t.id, { investmentId })} />}
         {arr(accounts).length > 0 && <AccountPicker accounts={accounts} type={t.type} value={t.account || ''} onChange={(account) => a.patch('txns', t.id, { account })} />}
-      </div>
-      <button
-        type="button"
-        onClick={() => a.flipType(t.id)}
-        title={`Click to switch to ${income ? 'expense' : 'income'}`}
-        className={cn('w-[110px] flex-none rounded-md text-right text-[14px] font-semibold hover:bg-hair/[0.05]', income ? 'text-green' : 'text-fg')}
-      >
-        {income ? '+' : '−'}{inr(t.amount)}
-      </button>
-      <div className="flex w-[70px] flex-none items-center justify-end gap-1">
-        {t.source === 'import' ? <Chip>Import</Chip> : <Chip tone="blue">Manual</Chip>}
-        <button
-          type="button"
-          onClick={() => a.remove('txns', t.id)}
-          aria-label="Delete transaction"
-          className="px-1 text-[16px] leading-none text-mute2 opacity-0 hover:text-pink group-hover:opacity-100 focus:opacity-100"
-        >
-          ×
-        </button>
       </div>
     </div>
   )
@@ -344,5 +355,89 @@ function AddTransaction({ onAdd, defaultDate, loans, accounts, investments, last
         </div>
       </div>
     </Section>
+  )
+}
+
+/* Edit everything about an income / expense: date, type, description, amount, category, account. */
+function EditTransaction({ pf, t, onClose }) {
+  const { state: s, actions: a } = pf
+  const [v, setV] = useState({
+    date: t.date || '', type: t.type, desc: t.desc || '', amount: String(t.amount ?? ''), category: t.category || 'other',
+    account: t.account || '', loanId: t.loanId || '', investmentId: t.investmentId || '', note: t.note || '',
+  })
+  const [err, setErr] = useState('')
+  const set = (p) => {
+    setV((prev) => {
+      const next = { ...prev, ...p }
+      if ('type' in p && p.type !== prev.type) next.category = autoCategory(next.desc, next.type)
+      if (!(next.type === 'expense' && next.category === 'emi')) next.loanId = ''
+      else if (!next.loanId) next.loanId = matchLoan({ desc: next.desc, amount: num(next.amount) }, s.loans)
+      if (!(next.type === 'expense' && next.category === 'investment')) next.investmentId = ''
+      return next
+    })
+    setErr('')
+  }
+  const amountChanged = num(v.amount) !== num(t.amount)
+  const hadSplit = t.loanPrincipal != null || t.loanInterest != null
+  const save = () => {
+    if (!v.date) { setErr('Pick a date.'); return }
+    if (!v.desc.trim()) { setErr('Add a description.'); return }
+    if (!(num(v.amount) > 0)) { setErr('Enter an amount above zero.'); return }
+    const change = {
+      date: v.date, type: v.type, desc: v.desc.trim(), amount: num(v.amount), category: v.category,
+      account: v.account, loanId: v.loanId, investmentId: v.investmentId, note: v.note.trim(),
+    }
+    // A loan payment's principal / interest split must add up to the amount; re-enter it if the amount changed.
+    if (hadSplit && (amountChanged || v.loanId !== t.loanId)) Object.assign(change, { loanPrincipal: null, loanInterest: null })
+    a.patch('txns', t.id, change)
+    onClose()
+  }
+  const isEmi = v.type === 'expense' && v.category === 'emi' && arr(s.loans).length > 0
+  const isInvest = v.type === 'expense' && v.category === 'investment' && arr(s.investments).length > 0
+
+  return (
+    <Modal title="Edit transaction" onClose={onClose} width={540}>
+      <div className="grid gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div><Label>Date</Label><input type="date" className="field" value={v.date} onChange={(e) => set({ date: e.target.value })} /></div>
+          <div>
+            <Label>Type</Label>
+            <select className="select" value={v.type} onChange={(e) => set({ type: e.target.value })}>
+              <option value="expense">Expense</option>
+              <option value="income">Income</option>
+            </select>
+          </div>
+          <div className="sm:col-span-2"><Label>Description</Label><input className="field" value={v.desc} onChange={(e) => set({ desc: e.target.value })} /></div>
+          <div><Label>Amount (₹)</Label><input className="field" type="number" min="0" step="any" value={v.amount} onChange={(e) => set({ amount: e.target.value })} /></div>
+          <div>
+            <Label>Category</Label>
+            <select className="select" value={v.category} onChange={(e) => set({ category: e.target.value })}>
+              {catsFor(v.type).map((c) => <option key={c.k} value={c.k}>{c.label}</option>)}
+            </select>
+          </div>
+          {isEmi && <div className="sm:col-span-2"><Label>Which loan?</Label><LoanPicker loans={s.loans} value={v.loanId} className="py-2.5 text-[13.5px]" onChange={(loanId) => set({ loanId })} /></div>}
+          {isInvest && (
+            <div className="sm:col-span-2">
+              <Label>Which investment?</Label>
+              <InvestmentPicker investments={s.investments} value={v.investmentId} className="py-2.5 text-[13.5px]" onChange={(investmentId) => set({ investmentId })} />
+              {v.investmentId && v.account && <div className="mt-1 text-[11.5px] text-mute">Saved as a transfer from your account into this investment.</div>}
+            </div>
+          )}
+          <div className="sm:col-span-2">
+            <Label>{v.type === 'income' ? 'Received into' : 'Paid from'}</Label>
+            <AccountPicker accounts={s.savings} type={v.type} value={v.account} className="py-2.5 text-[13.5px]" showBalance onChange={(account) => set({ account })} />
+          </div>
+          <div className="sm:col-span-2"><Label>Note</Label><input className="field" value={v.note} onChange={(e) => set({ note: e.target.value })} /></div>
+        </div>
+        {hadSplit && (amountChanged || v.loanId !== t.loanId) && (
+          <p className="rounded-lg bg-yellow/[0.1] px-3 py-2 text-[12.5px]">This payment's principal / interest split will need entering again on the loan page.</p>
+        )}
+        {err && <p className="text-[12.5px] text-pink">{err}</p>}
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={onClose} className="rounded-lg px-4 py-2 text-[13px] font-medium text-mute hover:text-fg">Cancel</button>
+          <button type="button" onClick={save} className="rounded-lg bg-teal px-4 py-2 text-[13px] font-semibold text-onaccent hover:bg-teal-lt">Save</button>
+        </div>
+      </div>
+    </Modal>
   )
 }

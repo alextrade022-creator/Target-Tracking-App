@@ -380,3 +380,14 @@ export function endpointName(end, savings, investments) {
   const list = end.kind === 'investment' ? arr(investments) : arr(savings)
   return list.find((x) => x.id === end.id)?.name || 'Removed'
 }
+
+/** An "Investments" expense paid from an account into a chosen investment is really a
+ *  transfer (your money moves, it isn't spent). Store it as one, so both ways of
+ *  recording it look and behave the same. Totals are unchanged either way. */
+export function normalizeTxn(t) {
+  if (t?.type === 'expense' && t.category === 'investment' && t.investmentId && t.account) {
+    const { account, investmentId, loanId, ...rest } = t
+    return { ...rest, type: 'transfer', category: 'investment', from: { kind: 'account', id: account }, to: { kind: 'investment', id: investmentId } }
+  }
+  return t
+}

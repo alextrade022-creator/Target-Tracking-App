@@ -46,22 +46,28 @@ const parse = (k) => { const [kind, id] = String(k || '').split(':'); return id 
 
 /* Move money between your own accounts and investments. It isn't income or spending:
    the source goes down and the destination goes up by the same amount. */
-export function TransferDialog({ pf, onClose, initial = {} }) {
+export function TransferDialog({ pf, onClose, initial = {}, txn = null }) {
   const { state: s, actions: a } = pf
   const accounts = arr(s.savings)
   const investments = arr(s.investments)
   const firstAcc = accounts.find((x) => x.id === s.settings?.lastAccount) || accounts[0]
-  const [from, setFrom] = useState(key(initial.from) || (firstAcc ? `account:${firstAcc.id}` : ''))
-  const [to, setTo] = useState(key(initial.to) || (investments[0] ? `investment:${investments[0].id}` : accounts[1] ? `account:${accounts[1].id}` : ''))
-  const [amount, setAmount] = useState('')
-  const [date, setDate] = useState(iso(new Date()))
-  const [note, setNote] = useState('')
+  const [from, setFrom] = useState(key(txn?.from) || key(initial.from) || (firstAcc ? `account:${firstAcc.id}` : ''))
+  const [to, setTo] = useState(key(txn?.to) || key(initial.to) || (investments[0] ? `investment:${investments[0].id}` : accounts[1] ? `account:${accounts[1].id}` : ''))
+  const [amount, setAmount] = useState(txn ? String(txn.amount) : '')
+  const [date, setDate] = useState(txn?.date || iso(new Date()))
+  const [note, setNote] = useState(txn?.note || '')
   const [err, setErr] = useState('')
 
   const find = (k) => { const e = parse(k); if (!e) return null; const x = (e.kind === 'investment' ? investments : accounts).find((y) => y.id === e.id); return x ? { ...e, x } : null }
   const src = find(from), dst = find(to)
   const amt = num(amount)
-  const valueOf = (e) => (e.kind === 'investment' ? num(e.x.current) : num(e.x.balance))
+  // When editing, take the old transfer back out so the preview shows the new effect only.
+  const same = (a1, b1) => a1 && b1 && a1.kind === b1.kind && a1.id === b1.id
+  const valueOf = (e) => {
+    const now = e.kind === 'investment' ? num(e.x.current) : num(e.x.balance)
+    if (!txn) return now
+    return now + (same(e, txn.from) ? num(txn.amount) : 0) - (same(e, txn.to) ? num(txn.amount) : 0)
+  }
 
   const options = (
     <>
@@ -74,7 +80,7 @@ export function TransferDialog({ pf, onClose, initial = {} }) {
     if (!src || !dst) { setErr('Choose where the money comes from and where it goes.'); return }
     if (from === to) { setErr('Pick two different places.'); return }
     if (!amt) { setErr('Enter the amount.'); return }
-    a.add('txns', {
+    const fields = {
       type: 'transfer',
       date,
       amount: amt,
@@ -84,8 +90,9 @@ export function TransferDialog({ pf, onClose, initial = {} }) {
       category: dst.kind === 'investment' && src.kind === 'account' ? 'investment' : 'transfer',
       desc: `${src.x.name} → ${dst.x.name}`,
       note: note.trim(),
-      source: 'manual',
-    })
+    }
+    if (txn) a.patch('txns', txn.id, fields)
+    else a.add('txns', { ...fields, source: 'manual' })
     onClose()
   }
 
@@ -99,7 +106,7 @@ export function TransferDialog({ pf, onClose, initial = {} }) {
   }
 
   return (
-    <Modal title="Transfer money" hint="Between your own accounts, or from an account into an investment. It isn't counted as income or spending." onClose={onClose}>
+    <Modal title={txn ? 'Edit transfer' : 'Transfer money'} hint="Between your own accounts, or from an account into an investment. It isn't counted as income or spending." onClose={onClose}>
       <div className="grid gap-3">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div><Label>From</Label><select className="select" value={from} onChange={(e) => { setFrom(e.target.value); setErr('') }}><option value="">Choose…</option>{options}</select></div>
@@ -118,7 +125,7 @@ export function TransferDialog({ pf, onClose, initial = {} }) {
         {err && <p className="text-[12.5px] text-pink">{err}</p>}
         <div className="flex justify-end gap-2">
           <button type="button" onClick={onClose} className="rounded-lg px-4 py-2 text-[13px] font-medium text-mute hover:text-fg">Cancel</button>
-          <button type="button" onClick={save} className="rounded-lg bg-teal px-4 py-2 text-[13px] font-semibold text-onaccent hover:bg-teal-lt">Transfer</button>
+          <button type="button" onClick={save} className="rounded-lg bg-teal px-4 py-2 text-[13px] font-semibold text-onaccent hover:bg-teal-lt">{txn ? 'Save' : 'Transfer'}</button>
         </div>
       </div>
     </Modal>
