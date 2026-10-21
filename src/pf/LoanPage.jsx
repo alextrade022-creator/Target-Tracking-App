@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { cn, iso, pretty } from '../lib/helpers'
 import { Label } from '../ws/ui'
 import { Modal } from '../crm/bits'
@@ -10,12 +10,15 @@ const COLORS = ['#2563EB', '#7C5AE8', '#0FA3A3', '#C6871B', '#DC4A63', '#16A34A'
 
 export default function LoanPage({ pf, loan: l }) {
   const { state: s, actions: a } = pf
-  const [editing, setEditing] = useState(false)
-  const [payment, setPayment] = useState(null) // null | { txn? } — txn set when editing a payment's split
+  const led = loanLedger(l, s.txns)
+  // Buttons on the loans list can open the form / dialog straight away.
+  const intent = s.loanIntent
+  const firstEstimated = led.rows.find((r) => r.estimated)?.t
+  const [editing, setEditing] = useState(intent === 'edit')
+  const [payment, setPayment] = useState(() => (intent === 'record' ? {} : intent === 'split' && firstEstimated ? { txn: firstEstimated } : null))
   const [people, setPeople] = useState(false)
   const [confirm, setConfirm] = useState('') // '' | 'loan' | <txn id>
-
-  const led = loanLedger(l, s.txns)
+  useEffect(() => { if (intent) a.clearLoanIntent() }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const contributors = arr(s.settings?.contributors)
   const nameOf = (id) => (id === 'me' ? 'Me' : contributors.find((c) => c.id === id)?.name || 'Removed person')
   const colorOf = (id) => (id === 'me' ? COLORS[0] : COLORS[1 + (Math.max(0, contributors.findIndex((c) => c.id === id)) % (COLORS.length - 1))])

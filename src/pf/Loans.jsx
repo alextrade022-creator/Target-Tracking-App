@@ -65,6 +65,7 @@ export default function Loans({ pf }) {
                       <span className="text-[15px] font-semibold">{l.name || 'N/A'}</span>
                       {isFlexible(l) ? <Chip tone="slate">Flexible payments</Chip> : <Chip tone="blue">Fixed EMI {inr(l.emi)}/mo</Chip>}
                       {led.estimated > 0 && <Chip tone="amber">{led.estimated} split{led.estimated === 1 ? '' : 's'} to enter</Chip>}
+                      <span className="text-[13px] text-mute2" aria-hidden="true">›</span>
                     </div>
                     <div className="mt-1 text-[12.5px] text-mute">
                       {[l.lender, l.kind].filter(Boolean).join(' · ') || 'N/A'}
@@ -84,9 +85,8 @@ export default function Loans({ pf }) {
                   {others.map((k) => <span key={k}>{names[k] || 'Someone'} contributed {inr(led.by[k])}</span>)}
                 </div>
               </button>
-              {!isFlexible(l) && (
-                <div className="-mt-1 flex flex-wrap items-center gap-2 px-5 pb-3.5 text-[12.5px] text-mute">
-                  {st.status === 'paid' && !st.manual ? (
+              <div className="-mt-1 flex flex-wrap items-center gap-x-3 gap-y-2 px-5 pb-3.5 text-[12.5px] text-mute">
+                {!isFlexible(l) && (st.status === 'paid' && !st.manual ? (
                     <Chip tone="green">Paid for {monthLabel(ym, true)}</Chip>
                   ) : (
                     <label className="flex cursor-pointer items-center gap-2">
@@ -97,9 +97,18 @@ export default function Loans({ pf }) {
                           ? <span className="text-yellow">Part paid {inr(st.paid)} of {inr(l.emi)}</span>
                           : `Due ${pretty(nextDue(l, new Date(), loanPaidMonths(l, s.txns)))}`}
                     </label>
+                  ))}
+                <div className="ml-auto flex flex-wrap gap-2">
+                  {led.estimated > 0 && (
+                    <button type="button" onClick={() => a.openLoan(l.id, 'split')} className="rounded-lg border border-yellow/50 bg-yellow/[0.1] px-3 py-1.5 font-semibold text-yellow hover:bg-yellow/[0.16]">
+                      Enter split
+                    </button>
                   )}
+                  <button type="button" onClick={() => a.openLoan(l.id, 'edit')} className="rounded-lg border border-hair/[0.14] px-3 py-1.5 font-medium text-fg hover:border-hair/[0.3]">Edit</button>
+                  <button type="button" onClick={() => a.openLoan(l.id, 'record')} className="rounded-lg border border-hair/[0.14] px-3 py-1.5 font-medium text-fg hover:border-hair/[0.3]">+ Record payment</button>
+                  <button type="button" onClick={() => a.openLoan(l.id)} className="rounded-lg bg-teal px-3 py-1.5 font-semibold text-onaccent hover:bg-teal-lt">Open loan →</button>
                 </div>
-              )}
+              </div>
             </div>
           )
         })}

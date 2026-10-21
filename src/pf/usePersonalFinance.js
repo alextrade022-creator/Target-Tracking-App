@@ -43,7 +43,9 @@ export function usePersonalFinance() {
   useEffect(() => persist('pfSettings', s.settings), [s.settings, persist])
 
   const setTab = useCallback((tab) => update({ tab, loanId: '' }), [update])
-  const openLoan = useCallback((loanId) => update({ tab: 'loans', loanId: loanId || '' }), [update])
+  // intent: '' | 'edit' | 'record' | 'split' — what to open straight away on the loan page
+  const openLoan = useCallback((loanId, intent = '') => update({ tab: 'loans', loanId: loanId || '', loanIntent: intent }), [update])
+  const clearLoanIntent = useCallback(() => update({ loanIntent: '' }), [update])
 
   /* People who sometimes give money towards a loan ("Me" is implicit). */
   const addContributor = useCallback((name) => {
@@ -143,6 +145,6 @@ export function usePersonalFinance() {
 
   return {
     state: s,
-    actions: { setTab, openLoan, addContributor, renameContributor, removeContributor, setMonth, shiftMonth, add, patch, remove, setSettings, importTxns, undoImport, setBatchType, flipType, toggleLoanPaid },
+    actions: { setTab, openLoan, clearLoanIntent, addContributor, renameContributor, removeContributor, setMonth, shiftMonth, add, patch, remove, setSettings, importTxns, undoImport, setBatchType, flipType, toggleLoanPaid },
   }
 }
