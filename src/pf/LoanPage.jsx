@@ -4,6 +4,7 @@ import { Label } from '../ws/ui'
 import { Modal } from '../crm/bits'
 import { Stat, Chip } from './ui'
 import { LoanForm } from './Loans'
+import { AccountPicker } from './Accounts'
 import { inr, num, arr, monthKey, monthLabel, loanLedger, loanStatus, isFlexible } from './lib'
 
 const COLORS = ['#2563EB', '#7C5AE8', '#0FA3A3', '#C6871B', '#DC4A63', '#16A34A']
@@ -214,6 +215,8 @@ function PaymentDialog({ pf, loan: l, balance, txn, onClose }) {
   const [principal, setPrincipal] = useState(txn?.loanPrincipal != null ? String(txn.loanPrincipal) : '')
   const [interest, setInterest] = useState(txn?.loanInterest != null ? String(txn.loanInterest) : '')
   const [note, setNote] = useState(txn?.note || '')
+  const accounts = arr(s.savings)
+  const [account, setAccount] = useState(() => txn ? txn.account || '' : accounts.some((x) => x.id === s.settings?.lastAccount) ? s.settings.lastAccount : accounts[0]?.id || '')
   const [funded, setFunded] = useState(() => arr(txn?.loanFunded).map((f) => ({ who: f.who, amount: String(f.amount) })))
   const [newName, setNewName] = useState('')
   const [err, setErr] = useState('')
@@ -231,7 +234,7 @@ function PaymentDialog({ pf, loan: l, balance, txn, onClose }) {
     if (txn && Math.abs(total - fixedAmount) > 1) { setErr(`Principal + interest must add up to the ${inr(fixedAmount)} paid. Now ${inr(total)}.`); return }
     if (others > total) { setErr('Contributions are more than the payment.'); return }
     const loanFunded = funded.filter((f) => f.who && num(f.amount) > 0).map((f) => ({ who: f.who, amount: num(f.amount) }))
-    const fields = { date, loanPrincipal: p, loanInterest: i, loanFunded, note: note.trim(), loanId: l.id }
+    const fields = { date, loanPrincipal: p, loanInterest: i, loanFunded, note: note.trim(), loanId: l.id, account }
     if (txn) a.patch('txns', txn.id, fields)
     else a.add('txns', { ...fields, desc: `${l.name || 'Loan'} payment`, amount: total, type: 'expense', category: 'emi', source: 'manual' })
     onClose()
@@ -273,7 +276,10 @@ function PaymentDialog({ pf, loan: l, balance, txn, onClose }) {
           </div>
         </div>
 
-        <div><Label>Note (optional)</Label><input className="field" placeholder="e.g. Part prepayment" value={note} onChange={(e) => setNote(e.target.value)} /></div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div><Label>Paid from</Label>{accounts.length ? <AccountPicker accounts={accounts} value={account} onChange={setAccount} className="py-2.5 text-[13.5px]" showBalance /> : <div className="rounded-lg border border-dashed border-hair/[0.18] px-3 py-2.5 text-[12px] text-mute">Add accounts in Savings &amp; investments</div>}</div>
+          <div><Label>Note (optional)</Label><input className="field" placeholder="e.g. Part prepayment" value={note} onChange={(e) => setNote(e.target.value)} /></div>
+        </div>
 
         <div className="grid gap-1 rounded-xl bg-hair/[0.04] px-3 py-2.5 text-[13px]">
           <span>Total paid{l.lender ? ` to ${l.lender}` : ''}: <b className="tabular-nums">{inr(total)}</b> ({inr(p)} principal + {inr(i)} interest)</span>

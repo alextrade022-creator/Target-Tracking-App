@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getState, putSlice } from '../lib/api'
 import { uid } from '../ws/lib'
-import { arr, monthKey, addMonths, autoCategory, matchLoan } from './lib'
+import { iso } from '../lib/helpers'
+import { arr, monthKey, addMonths, autoCategory, matchLoan, liveAccount, liveInvestment } from './lib'
 
 // list name -> MongoDB slice
 const LISTS = { txns: 'pfTxns', investments: 'pfInvestments', goals: 'pfGoals', savings: 'pfSavings', loans: 'pfEmis' }
@@ -64,20 +65,33 @@ export function usePersonalFinance() {
   const setMonth = useCallback((month) => update({ month }), [update])
   const shiftMonth = useCallback((k) => update((p) => ({ month: addMonths(p.month, k) })), [update])
 
+  // A balance / value typed in by hand becomes the new starting point (see balanceBase in lib.js).
+  const stampBase = (kind, change) => {
+    const typed = kind === 'savings' ? 'balance' in change : kind === 'investments' ? 'invested' in change || 'current' in change : false
+    return typed ? { ...change, asOf: iso(new Date()), balanceAt: Date.now(), ...(kind === 'savings' ? { updatedAt: iso(new Date()) } : {}) } : change
+  }
+
   const add = useCallback((kind, item) => {
     const id = uid(kind.slice(0, 2))
-    update((p) => ({ [kind]: arr(p[kind]).concat([{ ...item, id, createdAt: Date.now() }]) }))
+    update((p) => {
+      const out = { [kind]: arr(p[kind]).concat([{ ...stampBase(kind, item), id, createdAt: Date.now() }]) }
+      // remember the account used last, to suggest it next time
+      if (kind === 'txns' && item.account) out.settings = { ...p.settings, lastAccount: item.account }
+      return out
+    })
     return id
   }, [update])
 
   const patch = useCallback((kind, id, change) => {
-    update((p) => ({ [kind]: arr(p[kind]).map((x) => (x.id === id ? { ...x, ...change } : x)) }))
+    update((p) => ({ [kind]: arr(p[kind]).map((x) => (x.id === id ? { ...x, ...stampBase(kind, change) } : x)) }))
   }, [update])
 
   const remove = useCallback((kind, id) => {
     update((p) => {
       const out = { [kind]: arr(p[kind]).filter((x) => x.id !== id) }
       if (kind === 'loans') out.txns = arr(p.txns).map((t) => (t.loanId === id ? { ...t, loanId: '' } : t))
+      if (kind === 'savings') out.txns = arr(p.txns).map((t) => (t.account === id ? { ...t, account: '' } : t))
+      if (kind === 'investments') out.txns = arr(p.txns).map((t) => (t.investmentId === id ? { ...t, investmentId: '' } : t))
       if (kind === 'goals') {
         // anything set aside for the deleted goal becomes un-earmarked
         const clear = (x) => (x.purpose === id ? { ...x, purpose: '' } : x)
@@ -90,13 +104,13 @@ export function usePersonalFinance() {
 
   const setSettings = useCallback((change) => update((p) => ({ settings: { ...p.settings, ...change } })), [update])
 
-  const importTxns = useCallback((rows, fileName) => {
+  const importTxns = useCallback((rows, fileName, account = '') => {
     if (!arr(rows).length) return
     const batch = uid('b')
     const at = Date.now()
     update((p) => ({
       txns: arr(p.txns).concat(rows.map(({ row, ...r }, i) => ({
-        ...r, id: batch + '-' + i, batch, source: 'import', note: '', createdAt: at,
+        ...r, id: batch + '-' + i, batch, source: 'import', note: '', createdAt: at, account,
         // EMI rows are matched to a loan when the amount or lender makes it clear
         loanId: r.type === 'expense' && r.category === 'emi' ? matchLoan(r, p.loans) : '',
       }))),
@@ -143,8 +157,15 @@ export function usePersonalFinance() {
     }))
   }, [update])
 
+  // Balances and investment values as they stand after linked transactions.
+  const live = useMemo(() => ({
+    ...s,
+    savings: arr(s.savings).map((x) => liveAccount(x, s.txns)),
+    investments: arr(s.investments).map((x) => liveInvestment(x, s.txns)),
+  }), [s])
+
   return {
-    state: s,
+    state: live,
     actions: { setTab, openLoan, clearLoanIntent, addContributor, renameContributor, removeContributor, setMonth, shiftMonth, add, patch, remove, setSettings, importTxns, undoImport, setBatchType, flipType, toggleLoanPaid },
   }
 }

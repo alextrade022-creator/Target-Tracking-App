@@ -300,3 +300,83 @@ export function nextDue(l, now = new Date(), paidMonths) {
 export const INVEST_KINDS = ['Mutual fund', 'Stocks', 'Fixed deposit', 'Recurring deposit', 'PPF', 'EPF', 'NPS', 'Gold', 'Bonds', 'Real estate', 'Crypto', 'Other']
 export const SAVINGS_KINDS = ['Savings account', 'Current account', 'Cash', 'Wallet / UPI', 'Other']
 export const LOAN_KINDS = ['Home loan', 'Car loan', 'Personal loan', 'Education loan', 'Gold loan', 'Business loan', 'Credit card', 'Other']
+
+/* ---------- accounts, investments and transfers ----------
+   A savings account's balance (and an investment's value) is what you last entered,
+   plus every transaction after that moment:
+     income received into it (+), expenses paid from it (−),
+     transfers in (+) / out (−), and for investments, expenses linked to them (+).
+   Entering a new balance "resets" it, so later edits never double count.            */
+
+/** Moment the stored balance/value was entered: { asOf: 'YYYY-MM-DD', at: ms }. */
+export function balanceBase(x) {
+  const at = num(x?.balanceAt) || num(x?.createdAt)
+  const asOf = x?.asOf || x?.updatedAt || (at ? iso(new Date(at)) : '')
+  return { asOf, at }
+}
+
+/** Did this transaction happen after the base balance was entered? */
+function after(t, base) {
+  const d = String(t?.date || '')
+  if (!base.asOf || d > base.asOf) return true
+  if (d < base.asOf) return false
+  return num(t?.createdAt) > base.at // same day: only if recorded after the balance was set
+}
+
+/** Signed effect of one transaction on an account (+ in, − out). */
+export function accountEffect(t, id) {
+  const amt = num(t?.amount)
+  if (t?.type === 'income' && t.account === id) return amt
+  if (t?.type === 'expense' && t.account === id) return -amt
+  if (t?.type === 'transfer') {
+    let d = 0
+    if (t.from?.kind === 'account' && t.from.id === id) d -= amt
+    if (t.to?.kind === 'account' && t.to.id === id) d += amt
+    return d
+  }
+  return 0
+}
+
+/** Signed effect of one transaction on an investment's money in. */
+export function investmentEffect(t, id) {
+  const amt = num(t?.amount)
+  if (t?.type === 'expense' && t.investmentId === id) return amt
+  if (t?.type === 'transfer') {
+    let d = 0
+    if (t.to?.kind === 'investment' && t.to.id === id) d += amt
+    if (t.from?.kind === 'investment' && t.from.id === id) d -= amt
+    return d
+  }
+  return 0
+}
+
+export function liveAccount(acc, txns) {
+  const base = balanceBase(acc)
+  let delta = 0, count = 0
+  for (const t of arr(txns)) {
+    const e = accountEffect(t, acc.id)
+    if (e && after(t, base)) { delta += e; count++ }
+  }
+  return { ...acc, baseBalance: num(acc.balance), balance: Math.round((num(acc.balance) + delta) * 100) / 100, moves: count, since: base.asOf }
+}
+
+export function liveInvestment(inv, txns) {
+  const base = balanceBase(inv)
+  let delta = 0, count = 0
+  for (const t of arr(txns)) {
+    const e = investmentEffect(t, inv.id)
+    if (e && after(t, base)) { delta += e; count++ }
+  }
+  return {
+    ...inv,
+    baseInvested: num(inv.invested), baseCurrent: num(inv.current),
+    invested: num(inv.invested) + delta, current: num(inv.current) + delta, moves: count, since: base.asOf,
+  }
+}
+
+/** "HDFC" / "Zerodha MF" for a transfer end ({ kind, id }). */
+export function endpointName(end, savings, investments) {
+  if (!end?.id) return 'N/A'
+  const list = end.kind === 'investment' ? arr(investments) : arr(savings)
+  return list.find((x) => x.id === end.id)?.name || 'Removed'
+}

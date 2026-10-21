@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { iso, pretty } from '../lib/helpers'
 import { Section, Empty } from '../ws/ui'
 import { Stat, Chip, ItemRow, RecordForm, AddLink } from './ui'
+import { TransferDialog } from './Accounts'
 import { inr, num, arr, sumBy, purposeOptions, purposeLabel, INVEST_KINDS, SAVINGS_KINDS } from './lib'
 
 const KIND_COLORS = ['#2563EB', '#16A34A', '#7C5AE8', '#DD6A1E', '#0FA3A3', '#C6871B', '#DC4A63', '#5B6B7C', '#B45FD6', '#15803D', '#2D74D8', '#64748B']
@@ -9,19 +10,20 @@ const KIND_COLORS = ['#2563EB', '#16A34A', '#7C5AE8', '#DD6A1E', '#0FA3A3', '#C6
 export default function Assets({ pf }) {
   const { state: s, actions: a } = pf
   const [edit, setEdit] = useState('') // id being edited, or 'new-savings' / 'new-inv'
+  const [transfer, setTransfer] = useState(null) // null | { from?, to? }
   const purpose = purposeOptions(s.goals)
 
   const savingsFields = [
     { k: 'name', label: 'Account name', required: true, placeholder: 'e.g. HDFC savings' },
     { k: 'kind', label: 'Type', type: 'select', options: SAVINGS_KINDS, default: SAVINGS_KINDS[0] },
-    { k: 'balance', label: 'Balance (₹)', type: 'number', required: true },
+    { k: 'balance', label: 'Balance now (₹)', type: 'number', required: true, hint: 'Your actual balance today. Later income, expenses and transfers update it.' },
     { k: 'purpose', label: 'Set aside for', type: 'select', options: purpose, hint: 'Counts toward that goal / emergency fund' },
   ]
   const invFields = [
     { k: 'name', label: 'Name', required: true, placeholder: 'e.g. Parag Parikh Flexi Cap' },
     { k: 'kind', label: 'Type', type: 'select', options: INVEST_KINDS, default: INVEST_KINDS[0] },
     { k: 'invested', label: 'Amount invested (₹)', type: 'number', required: true },
-    { k: 'current', label: 'Current value (₹)', type: 'number', required: true },
+    { k: 'current', label: 'Current value (₹)', type: 'number', required: true, hint: 'Today’s value. Transfers into it add to both amounts.' },
     { k: 'monthlySip', label: 'Monthly SIP (₹)', type: 'number', placeholder: '0 if none' },
     { k: 'purpose', label: 'Set aside for', type: 'select', options: purpose },
   ]
@@ -41,8 +43,13 @@ export default function Assets({ pf }) {
     return label ? <Chip tone="blue">{label}</Chip> : null
   }
 
+  const moved = (x) => (x.moves ? <span className="text-mute2">· {x.moves} transaction{x.moves === 1 ? '' : 's'} since {pretty(x.since)}</span> : null)
+
   return (
     <div className="flex flex-col gap-5">
+      <div className="flex justify-end">
+        <button type="button" onClick={() => setTransfer({})} className="rounded-lg bg-teal px-4 py-2.5 text-[13px] font-semibold text-onaccent hover:bg-teal-lt">⇄ Transfer money</button>
+      </div>
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <Stat label="Savings & cash" value={inr(savingsTotal)} sub={`${arr(s.savings).length} accounts`} />
         <Stat label="Investments (current)" value={inr(current)} sub={`${inr(invested)} invested`} />
@@ -69,8 +76,9 @@ export default function Assets({ pf }) {
         ) : (
           <ItemRow key={x.id}
             title={x.name || 'N/A'}
-            meta={<>{x.kind || 'N/A'}{x.updatedAt && <span className="text-mute2">· updated {pretty(x.updatedAt)}</span>}{purposeChip(x.purpose)}</>}
+            meta={<>{x.kind || 'N/A'}{x.updatedAt && <span className="text-mute2">· balance set {pretty(x.updatedAt)}</span>}{moved(x)}{purposeChip(x.purpose)}</>}
             value={inr(x.balance)}
+            extra={<button type="button" onClick={() => setTransfer({ from: { kind: 'account', id: x.id } })} className="rounded-md px-2 py-1 text-[12px] font-medium text-teal hover:bg-teal/[0.06]">⇄ Transfer</button>}
             onEdit={() => setEdit(x.id)}
             onRemove={() => { if (window.confirm(`Delete ${x.name}?`)) a.remove('savings', x.id) }} />
         )))}
@@ -113,7 +121,8 @@ export default function Assets({ pf }) {
           return (
             <ItemRow key={x.id}
               title={x.name || 'N/A'}
-              meta={<>{x.kind || 'N/A'}{num(x.monthlySip) > 0 && <span>· SIP {inr(x.monthlySip)}/mo</span>}{purposeChip(x.purpose)}</>}
+              meta={<>{x.kind || 'N/A'}{num(x.monthlySip) > 0 && <span>· SIP {inr(x.monthlySip)}/mo</span>}{moved(x)}{purposeChip(x.purpose)}</>}
+              extra={<button type="button" onClick={() => setTransfer({ to: { kind: 'investment', id: x.id } })} className="rounded-md px-2 py-1 text-[12px] font-medium text-teal hover:bg-teal/[0.06]">+ Add money</button>}
               value={inr(x.current)}
               sub={<span className={g >= 0 ? 'text-green' : 'text-pink'}>{g >= 0 ? '+' : '−'}{inr(Math.abs(g))}{gp !== null ? ` (${gp.toFixed(1)}%)` : ''}</span>}
               onEdit={() => setEdit(x.id)}
@@ -121,6 +130,7 @@ export default function Assets({ pf }) {
           )
         })}
       </Section>
+      {transfer && <TransferDialog pf={pf} initial={transfer} onClose={() => setTransfer(null)} />}
     </div>
   )
 }

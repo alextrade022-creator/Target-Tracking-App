@@ -14,6 +14,8 @@ export default function ImportDialog({ pf, onClose }) {
   const [busy, setBusy] = useState(false)
   const [drag, setDrag] = useState(false)
   const [done, setDone] = useState(null)
+  const accounts = s.savings || []
+  const [account, setAccount] = useState(() => (accounts.some((x) => x.id === s.settings?.lastAccount) ? s.settings.lastAccount : accounts[0]?.id || ''))
 
   const load = async (f) => {
     if (!f) return
@@ -49,7 +51,7 @@ export default function ImportDialog({ pf, onClose }) {
 
   const doImport = () => {
     if (!result?.fresh.length) return
-    a.importTxns(result.fresh, file?.name)
+    a.importTxns(result.fresh, file?.name, account)
     setDone({ count: result.fresh.length, dupes: result.dupes, skipped: result.skipped })
   }
 
@@ -92,6 +94,17 @@ export default function ImportDialog({ pf, onClose }) {
           </div>
         ) : (
           <div className="p-6">
+            {accounts.length > 0 && (
+              <div className="mb-5 flex flex-wrap items-center gap-3 rounded-xl bg-hair/[0.03] px-4 py-3">
+                <span className="text-[13.5px] font-medium">Which account is this statement from?</span>
+                <select className="select w-auto min-w-[220px]" value={account} onChange={(e) => setAccount(e.target.value)} aria-label="Statement account">
+                  <option value="">Not tracked</option>
+                  {accounts.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+                </select>
+                <span className="text-[12px] text-mute">Its balance will move with these transactions.</span>
+              </div>
+            )}
+
             <div className="mb-1 text-[13.5px] font-medium">1. What's in this file?</div>
             <div className="mb-3 text-[12.5px] text-mute">We guessed from the numbers. Pick the right one if it's wrong.</div>
             <div className="mb-6 grid grid-cols-1 gap-2 sm:grid-cols-3" role="radiogroup" aria-label="What the file contains">
