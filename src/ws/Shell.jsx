@@ -8,6 +8,7 @@ const NAV = [
   { k: 'tasks', label: 'Tasks', icon: '✓' },
   { k: 'meetings', label: 'Meetings', icon: '✎' },
   { k: 'calendar', label: 'Calendar', icon: '▦' },
+  { k: 'notes', label: 'Notes & journal', icon: '▤' },
   { k: 'leads', label: 'Consultation leads', icon: '◇' },
   { k: 'payments', label: 'Client payments', icon: '₹' },
   { k: 'branding', label: 'Personal branding', icon: '✦' },

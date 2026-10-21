@@ -40,6 +40,7 @@ export const DEFAULTS = Object.freeze({
   crmSettings: {}, // consultation leads: { migrated } flag for the old pipeline import
   paySales: [], // client payments: sales with plans, payments, reminders, notes
   paySettings: {}, // client payments: sign-off, UPI, receipt details, counters
+  nbNotes: [], // notes & journal: notes made of blocks (text, points, table, mind map, whiteboard)
 })
 
 export const SLICE_KEYS = Object.keys(DEFAULTS)

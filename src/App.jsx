@@ -13,6 +13,8 @@ import { usePersonalFinance } from './pf/usePersonalFinance'
 import Leads from './crm/Leads'
 import { useLeads } from './crm/useLeads'
 import Payments from './pay/Payments'
+import Notes from './notes/Notes'
+import { useNotes } from './notes/useNotes'
 import { usePayments } from './pay/usePayments'
 
 export default function App() {
@@ -21,6 +23,7 @@ export default function App() {
   const pf = usePersonalFinance()
   const crm = useLeads()
   const pay = usePayments()
+  const nb = useNotes()
   const { theme, toggle } = useTheme()
   const page = ws.state.page
 
@@ -34,6 +37,7 @@ export default function App() {
       {page === 'finance' && <Finance pf={pf} />}
       {page === 'leads' && <Leads crm={crm} ws={ws} pay={pay} />}
       {page === 'payments' && <Payments pay={pay} />}
+      {page === 'notes' && <Notes nb={nb} ws={ws} />}
       {page === 'branding' && <Branding brand={brand} />}
     </Shell>
   )

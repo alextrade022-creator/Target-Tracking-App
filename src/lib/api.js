@@ -10,7 +10,7 @@ export const SLICE_KEYS = [
   'todos', 'archive', 'meetings', 'goals', 'goalEdits', 'branding', 'brandTags', 'leads',
   'wsBusinesses', 'wsTasks', 'wsMeetings',
   'pfTxns', 'pfInvestments', 'pfGoals', 'pfSavings', 'pfEmis', 'pfSettings',
-  'crmLeads', 'crmSettings', 'paySales', 'paySettings',
+  'crmLeads', 'crmSettings', 'paySales', 'paySettings', 'nbNotes',
 ]
 
 const WRITE_DELAY = 400 // ms
