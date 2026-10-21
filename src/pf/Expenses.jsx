@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { cn, iso, pretty } from '../lib/helpers'
 import { Section, Empty, Label } from '../ws/ui'
 import { Stat, Bar, Chip } from './ui'
@@ -12,7 +12,9 @@ export default function Expenses({ pf }) {
   const [q, setQ] = useState('')
   const [cat, setCat] = useState('all')
   const [type, setType] = useState('all')
-  const [limit, setLimit] = useState(100)
+  const [page, setPage] = useState(1)
+  const [sel, setSel] = useState(() => new Set()) // selected transaction ids
+  const [confirmBulk, setConfirmBulk] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [showTransfer, setShowTransfer] = useState(false)
   const [editing, setEditing] = useState(null) // transaction being edited
@@ -28,7 +30,20 @@ export default function Expenses({ pf }) {
     .filter((t) => !needle || String(t.desc || '').toLowerCase().includes(needle) || String(t.note || '').toLowerCase().includes(needle))
     .sort((x, y) => (y.date || '').localeCompare(x.date || '') || (y.createdAt || 0) - (x.createdAt || 0))
 
-  const imports = arr(s.settings?.imports)
+  // Imports whose transactions have all been deleted aren't worth showing.
+  const imports = arr(s.settings?.imports).filter((b) => arr(s.txns).some((t) => t.batch === b.id))
+
+  // 20 per page; a new month, search or filter starts again at page 1 with nothing selected.
+  const PER_PAGE = 20
+  const pages = Math.max(1, Math.ceil(list.length / PER_PAGE))
+  const pg = Math.min(page, pages)
+  const rows = list.slice((pg - 1) * PER_PAGE, pg * PER_PAGE)
+  useEffect(() => { setPage(1); setSel(new Set()); setConfirmBulk(false) }, [ym, needle, type, cat])
+  const chosen = list.filter((t) => sel.has(t.id))
+  const pageAll = rows.length > 0 && rows.every((t) => sel.has(t.id))
+  const toggle = (id) => setSel((old) => { const n = new Set(old); if (n.has(id)) n.delete(id); else n.add(id); return n })
+  const togglePage = () => setSel((old) => { const n = new Set(old); rows.forEach((t) => (pageAll ? n.delete(t.id) : n.add(t.id))); return n })
+  const goPage = (n) => { setPage(n); setConfirmBulk(false); document.getElementById('txn-list')?.scrollIntoView({ block: 'start', behavior: 'smooth' }) }
 
   return (
     <div className="flex flex-col gap-5">
@@ -62,7 +77,7 @@ export default function Expenses({ pf }) {
       <AddTransaction loans={s.loans} accounts={s.savings} investments={s.investments} lastAccount={s.settings?.lastAccount} onAdd={(t) => a.add('txns', t)} defaultDate={ym === iso(new Date()).slice(0, 7) ? iso(new Date()) : ym + '-01'} />
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_300px]">
-        <section className="panel min-w-0">
+        <section id="txn-list" className="panel min-w-0 scroll-mt-4">
           <div className="flex flex-wrap items-center gap-2 border-b border-hair/[0.07] px-5 py-3">
             <input className="field min-w-[180px] flex-1 py-2" placeholder="Search description or note…" value={q} onChange={(e) => setQ(e.target.value)} />
             <select className="select w-auto py-2" value={type} onChange={(e) => { setType(e.target.value); setCat('all') }}>
@@ -78,14 +93,42 @@ export default function Expenses({ pf }) {
               ))}
             </select>
           </div>
+          {list.length > 0 && (
+            <div className={cn('flex min-h-[46px] flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-hair/[0.07] px-5 py-2 text-[12.5px]', chosen.length && 'bg-teal/[0.05]')}>
+              <label className="flex cursor-pointer items-center gap-2 font-medium">
+                <input type="checkbox" checked={pageAll} onChange={togglePage} aria-label="Select all on this page" />
+                {chosen.length ? `${chosen.length} selected` : 'Select all on this page'}
+              </label>
+              {chosen.length > 0 && chosen.length < list.length && (
+                <button type="button" onClick={() => setSel(new Set(list.map((t) => t.id)))} className="font-semibold text-teal">Select all {list.length}</button>
+              )}
+              {chosen.length > 0 && (
+                <span className="ml-auto flex flex-wrap items-center gap-2">
+                  {confirmBulk ? (
+                    <>
+                      <span>Delete {chosen.length} transaction{chosen.length === 1 ? '' : 's'}? This can't be undone.</span>
+                      <button type="button" onClick={() => { a.removeMany('txns', chosen.map((t) => t.id)); setSel(new Set()); setConfirmBulk(false) }} className="rounded-lg bg-pink px-3 py-1 font-semibold text-onaccent">Delete</button>
+                      <button type="button" onClick={() => setConfirmBulk(false)} className="font-medium text-mute hover:text-fg">Keep</button>
+                    </>
+                  ) : (
+                    <>
+                      <button type="button" onClick={() => setSel(new Set())} className="font-medium text-mute hover:text-fg">Clear</button>
+                      <button type="button" onClick={() => setConfirmBulk(true)} className="rounded-lg border border-pink/50 px-3 py-1 font-semibold text-pink hover:bg-pink/[0.07]">Delete selected</button>
+                    </>
+                  )}
+                </span>
+              )}
+            </div>
+          )}
           {list.length === 0 && <Empty>No transactions for {monthLabel(ym)}. Add one above or import a statement.</Empty>}
-          {list.slice(0, limit).map((t) => (t.type === 'transfer'
-            ? <TransferRow key={t.id} t={t} a={a} s={s} onEdit={() => setEditing(t)} />
-            : <TxnRow key={t.id} t={t} a={a} loans={s.loans} accounts={s.savings} investments={s.investments} onEdit={() => setEditing(t)} />))}
-          {list.length > limit && (
-            <button type="button" onClick={() => setLimit(limit + 100)} className="w-full py-3 text-[13px] font-medium text-teal hover:bg-hair/[0.03]">
-              Show more ({list.length - limit} left)
-            </button>
+          {rows.map((t) => (t.type === 'transfer'
+            ? <TransferRow key={t.id} t={t} a={a} s={s} onEdit={() => setEditing(t)} selected={sel.has(t.id)} onSelect={() => toggle(t.id)} />
+            : <TxnRow key={t.id} t={t} a={a} loans={s.loans} accounts={s.savings} investments={s.investments} onEdit={() => setEditing(t)} selected={sel.has(t.id)} onSelect={() => toggle(t.id)} />))}
+          {list.length > PER_PAGE && (
+            <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 text-[12.5px] text-mute">
+              <span>Showing {(pg - 1) * PER_PAGE + 1}–{(pg - 1) * PER_PAGE + rows.length} of {list.length}</span>
+              <Pager page={pg} pages={pages} onPage={goPage} />
+            </div>
           )}
         </section>
 
@@ -123,11 +166,14 @@ export default function Expenses({ pf }) {
 }
 
 /* A transfer between your own accounts / investments: not income, not spending. */
-function TransferRow({ t, a, s, onEdit }) {
+function TransferRow({ t, a, s, onEdit, selected, onSelect }) {
   const [confirm, setConfirm] = useState(false)
   return (
-    <div className="group grid grid-cols-[64px_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 border-b border-hair/[0.06] px-5 py-3 last:border-b-0 xl:grid-cols-[64px_minmax(0,1fr)_200px_auto]">
-      <div className="pt-0.5 text-[12px] text-mute">{t.date ? pretty(t.date) : 'N/A'}</div>
+    <div className="group grid grid-cols-[88px_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 border-b border-hair/[0.06] px-5 py-3 last:border-b-0 xl:grid-cols-[88px_minmax(0,1fr)_200px_auto]">
+      <label className="flex cursor-pointer items-start gap-2 pt-0.5 text-[12px] text-mute">
+        <input type="checkbox" className="mt-0.5" checked={!!selected} onChange={onSelect} aria-label="Select transaction" />
+        <span>{t.date ? pretty(t.date) : 'N/A'}</span>
+      </label>
       <div className="min-w-0">
         <div className="truncate text-[13.5px]">
           <span className="mr-1.5 text-mute">⇄</span>
@@ -145,6 +191,24 @@ function TransferRow({ t, a, s, onEdit }) {
         <Chip tone={t.to?.kind === 'investment' ? 'blue' : 'slate'}>{t.to?.kind === 'investment' ? 'Invested' : 'Transfer'}</Chip>
       </div>
     </div>
+  )
+}
+
+/* ‹ Previous 1 2 … Next › — long lists show the first, last and nearby pages. */
+function Pager({ page, pages, onPage }) {
+  const nums = []
+  for (let i = 1; i <= pages; i++) if (i === 1 || i === pages || Math.abs(i - page) <= 1) nums.push(i)
+  const items = nums.flatMap((n, i) => (i && n - nums[i - 1] > 1 ? ['gap' + n, n] : [n]))
+  const b = 'h-[30px] min-w-[30px] rounded-lg border px-2 text-[12.5px] disabled:opacity-40'
+  return (
+    <nav className="flex flex-wrap items-center gap-1" aria-label="Pages">
+      <button type="button" disabled={page === 1} onClick={() => onPage(page - 1)} className={cn(b, 'border-hair/[0.14] hover:border-hair/[0.3]')}>‹ Previous</button>
+      {items.map((n) => (typeof n === 'string'
+        ? <span key={n} className="px-1 text-mute2">…</span>
+        : <button key={n} type="button" aria-current={n === page ? 'page' : undefined} onClick={() => onPage(n)}
+            className={cn(b, n === page ? 'border-teal bg-teal font-semibold text-onaccent' : 'border-hair/[0.14] hover:border-hair/[0.3]')}>{n}</button>))}
+      <button type="button" disabled={page === pages} onClick={() => onPage(page + 1)} className={cn(b, 'border-hair/[0.14] hover:border-hair/[0.3]')}>Next ›</button>
+    </nav>
   )
 }
 
@@ -204,14 +268,17 @@ function ImportRow({ b, pf }) {
   )
 }
 
-function TxnRow({ t, a, loans, accounts, investments, onEdit }) {
+function TxnRow({ t, a, loans, accounts, investments, onEdit, selected, onSelect }) {
   const [confirm, setConfirm] = useState(false)
   const income = t.type === 'income'
   const emi = !income && t.category === 'emi' && arr(loans).length > 0
   const invest = !income && t.category === 'investment' && arr(investments).length > 0
   return (
-    <div className="group grid grid-cols-[64px_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 border-b border-hair/[0.06] px-5 py-3 last:border-b-0 xl:grid-cols-[64px_minmax(0,1fr)_200px_auto]">
-      <div className="pt-0.5 text-[12px] text-mute">{t.date ? pretty(t.date) : 'N/A'}</div>
+    <div className="group grid grid-cols-[88px_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 border-b border-hair/[0.06] px-5 py-3 last:border-b-0 xl:grid-cols-[88px_minmax(0,1fr)_200px_auto]">
+      <label className="flex cursor-pointer items-start gap-2 pt-0.5 text-[12px] text-mute">
+        <input type="checkbox" className="mt-0.5" checked={!!selected} onChange={onSelect} aria-label="Select transaction" />
+        <span>{t.date ? pretty(t.date) : 'N/A'}</span>
+      </label>
       <div className="min-w-0">
         <div className="truncate text-[13.5px]" title={t.desc}>{t.desc || 'N/A'}</div>
         <input

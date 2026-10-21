@@ -107,6 +107,12 @@ export function usePersonalFinance() {
     })
   }, [update])
 
+  /** Delete several items of one list at once (e.g. selected transactions). */
+  const removeMany = useCallback((kind, ids) => {
+    const gone = new Set(ids)
+    update((p) => ({ [kind]: arr(p[kind]).filter((x) => !gone.has(x.id)) }))
+  }, [update])
+
   const setSettings = useCallback((change) => update((p) => ({ settings: { ...p.settings, ...change } })), [update])
 
   const importTxns = useCallback((rows, fileName, account = '') => {
@@ -171,6 +177,6 @@ export function usePersonalFinance() {
 
   return {
     state: live,
-    actions: { setTab, openLoan, clearLoanIntent, addContributor, renameContributor, removeContributor, setMonth, shiftMonth, add, patch, remove, setSettings, importTxns, undoImport, setBatchType, flipType, toggleLoanPaid },
+    actions: { setTab, openLoan, clearLoanIntent, addContributor, renameContributor, removeContributor, setMonth, shiftMonth, add, patch, remove, removeMany, setSettings, importTxns, undoImport, setBatchType, flipType, toggleLoanPaid },
   }
 }
