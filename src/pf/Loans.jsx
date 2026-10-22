@@ -117,7 +117,7 @@ export default function Loans({ pf }) {
   )
 }
 
-/* Add / edit a loan. "Where it stands today" is the opening position the ledger starts from. */
+/* Add / edit a loan. "Where it stands" (on a chosen date) is the opening position the ledger starts from. */
 export function LoanForm({ initial, onSave, onCancel, submitLabel = 'Add loan' }) {
   const o = initial ? loanOpening(initial) : null
   const [v, setV] = useState(() => ({
@@ -134,6 +134,7 @@ export function LoanForm({ initial, onSave, onCancel, submitLabel = 'Add loan' }
     balance: o ? o.balance : '',
     principal: o ? o.principal || '' : '',
     interest: o ? o.interest || '' : '',
+    openDate: o?.date || iso(new Date()),
   }))
   const [err, setErr] = useState('')
   const set = (k) => (e) => { setV({ ...v, [k]: e.target.value }); setErr('') }
@@ -143,14 +144,16 @@ export function LoanForm({ initial, onSave, onCancel, submitLabel = 'Add loan' }
     if (!v.name.trim()) { setErr('Enter a name for the loan.'); return }
     if (fixed && !num(v.emi)) { setErr('Enter the EMI, or choose flexible payments.'); return }
     const balance = v.balance === '' ? num(v.amount) : num(v.balance)
-    const same = o && balance === o.balance && num(v.principal) === o.principal && num(v.interest) === o.interest
+    const today = iso(new Date())
+    const openDate = v.openDate && v.openDate <= today ? v.openDate : today
+    const same = o && balance === o.balance && num(v.principal) === o.principal && num(v.interest) === o.interest && openDate === o.date
     onSave({
       name: v.name.trim(), lender: v.lender.trim(), kind: v.kind, mode: v.mode,
       amount: num(v.amount), rate: num(v.rate), emi: fixed ? num(v.emi) : 0, dueDay: fixed ? num(v.dueDay) : 0,
       start: v.start, endDate: fixed ? v.endDate : '',
       outstanding: balance,
-      // A changed opening position starts the ledger again from today.
-      opening: same ? initial.opening || { ...o } : { date: iso(new Date()), balance, principal: num(v.principal), interest: num(v.interest) },
+      // The opening position is true on openDate: linked payments from that date on reduce it.
+      opening: same ? initial.opening || { ...o } : { date: openDate, balance, principal: num(v.principal), interest: num(v.interest) },
     })
   }
 
@@ -181,13 +184,17 @@ export function LoanForm({ initial, onSave, onCancel, submitLabel = 'Add loan' }
         <div><Label>Loan start date</Label><input className="field" type="date" value={v.start} onChange={set('start')} /></div>
         {fixed && <div><Label>Last EMI date</Label><input className="field" type="date" value={v.endDate} onChange={set('endDate')} /></div>}
       </div>
-      <div className="mt-4 text-[12.5px] font-medium">Where it stands today <span className="font-normal text-mute">(from your loan statement)</span></div>
-      <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div><Label>Outstanding now (₹)</Label><input className="field" type="number" min="0" step="1000" placeholder="Same as amount borrowed" value={v.balance} onChange={set('balance')} /></div>
+      <div className="mt-4 text-[12.5px] font-medium">Where it stands <span className="font-normal text-mute">(from your loan statement)</span></div>
+      <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div><Label>As of date</Label><input className="field" type="date" max={iso(new Date())} value={v.openDate} onChange={set('openDate')} /></div>
+        <div><Label>Outstanding on that date (₹)</Label><input className="field" type="number" min="0" step="1000" placeholder="Same as amount borrowed" value={v.balance} onChange={set('balance')} /></div>
         <div><Label>Principal repaid so far (₹)</Label><input className="field" type="number" min="0" step="1000" value={v.principal} onChange={set('principal')} /></div>
         <div><Label>Interest paid so far (₹)</Label><input className="field" type="number" min="0" step="1000" value={v.interest} onChange={set('interest')} /></div>
       </div>
-      {initial && <div className="mt-1.5 text-[11.5px] text-mute2">Changing these restarts the payment history from today. Payments before today stay in Expenses.</div>}
+      <div className="mt-1.5 text-[11.5px] text-mute2">
+        Payments dated on or after {v.openDate ? v.openDate.split('-').reverse().join('/') : 'this date'} reduce the outstanding. Earlier ones are treated as already included.
+        {initial && ' Changing these restarts the payment history from that date; the payments stay in Expenses.'}
+      </div>
       {err && <p className="mt-2 text-[12.5px] text-pink">{err}</p>}
       <div className="mt-4 flex justify-end gap-2">
         <button type="button" onClick={onCancel} className="rounded-lg px-4 py-2 text-[13px] font-medium text-mute hover:text-fg">Cancel</button>
